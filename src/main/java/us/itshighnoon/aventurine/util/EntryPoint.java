@@ -2,7 +2,7 @@ package us.itshighnoon.aventurine.util;
 
 import us.itshighnoon.aventurine.Game;
 
-// highest log #: 0012
+// highest log #: 0013
 
 public class EntryPoint {
   public static void main(String[] args) {
