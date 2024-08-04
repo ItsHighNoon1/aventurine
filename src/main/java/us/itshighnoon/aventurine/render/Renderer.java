@@ -16,8 +16,9 @@ public class Renderer {
     GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
   }
   
-  public void render(RawModel model) {
+  public void render(Camera camera, RawModel model) {
     testShader.bind();
+    testShader.setMvpMatrix(camera.getCameraMatrix());
     model.bind();
     GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, model.getVertexCount());
   }

@@ -1,5 +1,11 @@
 package us.itshighnoon.aventurine.render;
 
+import static org.lwjgl.assimp.Assimp.aiImportFile;
+import static org.lwjgl.assimp.Assimp.aiProcess_FixInfacingNormals;
+import static org.lwjgl.assimp.Assimp.aiProcess_JoinIdenticalVertices;
+import static org.lwjgl.assimp.Assimp.aiProcess_Triangulate;
+
+import org.lwjgl.assimp.AIScene;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
@@ -25,6 +31,18 @@ public class RawModel {
     GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 12, 0); // 12 is sizeof(float) * 3
     GL20.glEnableVertexAttribArray(0);
     GL30.glBindVertexArray(0);
+  }
+  
+  public RawModel(String modelPath) {
+    AIScene aiScene = aiImportFile(modelPath,
+        aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_FixInfacingNormals);
+    if (aiScene == null) {
+      Logger.log("0017 Assimp failed to load file " + modelPath, Logger.Severity.ERROR);
+      this.vao = 0;
+      this.vbo = 0;
+      this.vCount = 0;
+      return;
+    }
   }
   
   public void bind() {

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 
@@ -58,5 +59,15 @@ public class ShaderProgram {
   
   public void cleanup() {
     GL20.glDeleteProgram(shaderProgram);
+  }
+  
+  protected int getUniformLocation(String uniformName) {
+    return GL20.glGetUniformLocation(this.shaderProgram, uniformName);
+  }
+  
+  protected void uniformMat4(int location, Matrix4f mat) {
+    float[] matData = new float[16];
+    mat.get(matData);
+    GL20.glUniformMatrix4fv(location, false, matData);
   }
 }

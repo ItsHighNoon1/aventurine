@@ -16,14 +16,16 @@ public class Logger {
   private ConcurrentLinkedQueue<String> messages;
   private PrintWriter fileOut;
   private boolean stdout;
+  private boolean ignoreInfos;
 
-  public Logger(String filepath, boolean stdout) {
+  public Logger(String filepath, boolean stdout, boolean ignoreInfos) {
     if (singleton != null) {
       log("0001 Attempted second Logger initialization", Severity.WARN);
       return;
     }
     singleton = this;
     
+    this.ignoreInfos = ignoreInfos;
     this.logThread = new LoggerThread();
     this.messages = new ConcurrentLinkedQueue<String>();
     if (filepath != null) {
@@ -49,6 +51,9 @@ public class Logger {
     sb.append(new Date().toString());
     switch (sev) {
     case INFO:
+      if (singleton.ignoreInfos) {
+        return;
+      }
       sb.append(" [INFO]  ");
       break;
     case WARN:
