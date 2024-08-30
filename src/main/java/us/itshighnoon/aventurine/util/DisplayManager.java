@@ -1,22 +1,6 @@
 package us.itshighnoon.aventurine.util;
 
-import static org.lwjgl.glfw.GLFW.GLFW_FALSE;
-import static org.lwjgl.glfw.GLFW.GLFW_RESIZABLE;
-import static org.lwjgl.glfw.GLFW.GLFW_TRUE;
-import static org.lwjgl.glfw.GLFW.GLFW_VISIBLE;
-import static org.lwjgl.glfw.GLFW.glfwCreateWindow;
-import static org.lwjgl.glfw.GLFW.glfwDestroyWindow;
-import static org.lwjgl.glfw.GLFW.glfwInit;
-import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
-import static org.lwjgl.glfw.GLFW.glfwPollEvents;
-import static org.lwjgl.glfw.GLFW.glfwSetFramebufferSizeCallback;
-import static org.lwjgl.glfw.GLFW.glfwShowWindow;
-import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
-import static org.lwjgl.glfw.GLFW.glfwSwapInterval;
-import static org.lwjgl.glfw.GLFW.glfwTerminate;
-import static org.lwjgl.glfw.GLFW.glfwWindowHint;
-import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
-
+import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 
@@ -41,20 +25,22 @@ public class DisplayManager {
     this.currentWidth = width;
     this.currentHeight = height;
 
-    if (!glfwInit()) {
+    if (!GLFW.glfwInit()) {
       Logger.log("0006 Failed to initialize GLFW", Logger.Severity.ERROR);
       return;
     }
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-    this.window = glfwCreateWindow(width, height, title, monitor, 0);
+    GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
+    GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
+    GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
+    GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, GLFW.GLFW_TRUE);
+    this.window = GLFW.glfwCreateWindow(width, height, title, monitor, 0);
     if (this.window == 0) {
       Logger.log("0007 Failed to create GLFW window", Logger.Severity.ERROR);
     }
 
-    glfwMakeContextCurrent(this.window);
+    GLFW.glfwMakeContextCurrent(this.window);
     GL.createCapabilities();
-    glfwSetFramebufferSizeCallback(this.window, (long cbWin, int newWidth, int newHeight) -> {
+    GLFW.glfwSetFramebufferSizeCallback(this.window, (long cbWin, int newWidth, int newHeight) -> {
       if (this.camera != null) {
         this.camera.recalculateProjection(newWidth, newHeight);
       }
@@ -64,8 +50,8 @@ public class DisplayManager {
       Logger.log("0010 Window size changed");
     });
     GL11.glViewport(0, 0, width, height);
-    glfwSwapInterval(vsync);
-    glfwShowWindow(this.window);
+    GLFW.glfwSwapInterval(vsync);
+    GLFW.glfwShowWindow(this.window);
   }
 
   public DisplayManager() {
@@ -82,7 +68,7 @@ public class DisplayManager {
       Logger.log("0009 Window status queried before window init", Logger.Severity.WARN);
       return false;
     }
-    return glfwWindowShouldClose(singleton.window);
+    return GLFW.glfwWindowShouldClose(singleton.window);
   }
 
   public static void refresh() {
@@ -90,8 +76,8 @@ public class DisplayManager {
       Logger.log("0008 Refresh attempted before window init", Logger.Severity.WARN);
       return;
     }
-    glfwSwapBuffers(singleton.window);
-    glfwPollEvents();
+    GLFW.glfwSwapBuffers(singleton.window);
+    GLFW.glfwPollEvents();
   }
 
   public static int getWidth() {
@@ -109,9 +95,17 @@ public class DisplayManager {
     }
     return singleton.currentHeight;
   }
+  
+  public static boolean getKeyDown(int keyCode) {
+    if (singleton == null) {
+      Logger.log("0021 Input status queried before window init", Logger.Severity.WARN);
+      return false;
+    }
+    return GLFW.glfwGetKey(singleton.window, keyCode) == GLFW.GLFW_PRESS;
+  }
 
   public void destroy() {
-    glfwDestroyWindow(this.window);
-    glfwTerminate();
+    GLFW.glfwDestroyWindow(this.window);
+    GLFW.glfwTerminate();
   }
 }

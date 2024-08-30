@@ -1,6 +1,7 @@
 package us.itshighnoon.aventurine.render;
 
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
 
 import us.itshighnoon.aventurine.shader.TestShader;
 
@@ -10,6 +11,7 @@ public class Renderer {
   public Renderer() {
     this.testShader = new TestShader();
     GL11.glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+    GL11.glEnable(GL11.GL_DEPTH_TEST);
   }
   
   public void prepare() {
@@ -20,7 +22,8 @@ public class Renderer {
     testShader.bind();
     testShader.setMvpMatrix(camera.getCameraMatrix());
     model.bind();
-    GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, model.getVertexCount());
+    GL11.glDrawElements(GL11.GL_TRIANGLES, model.getVertexCount(), GL11.GL_UNSIGNED_INT, 0);
+    GL30.glBindVertexArray(0);
   }
   
   public void cleanup() {
