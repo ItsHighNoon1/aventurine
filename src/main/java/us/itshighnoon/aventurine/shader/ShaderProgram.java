@@ -65,6 +65,10 @@ public class ShaderProgram {
     return GL20.glGetUniformLocation(this.shaderProgram, uniformName);
   }
   
+  protected void uniform1i(int location, int value) {
+    GL20.glUniform1i(location, value);
+  }
+  
   protected void uniformMat4(int location, Matrix4f mat) {
     float[] matData = new float[16];
     mat.get(matData);

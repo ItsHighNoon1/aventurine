@@ -5,12 +5,14 @@ layout(location = 1) in vec2 a_texCoords;
 layout(location = 2) in vec3 a_normal;
 
 out vec3 v_position;
+out vec2 v_texCoords;
 out vec3 v_normal;
 
 uniform mat4 u_mvpMatrix;
 
 void main() {
   v_position = a_position;
+  v_texCoords = a_texCoords;
   v_normal = a_normal;
   gl_Position = u_mvpMatrix * vec4(a_position, 1.0);
 }

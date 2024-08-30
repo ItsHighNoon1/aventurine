@@ -12,17 +12,19 @@ public class Renderer {
     this.testShader = new TestShader();
     GL11.glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
     GL11.glEnable(GL11.GL_DEPTH_TEST);
+    GL11.glEnable(GL11.GL_CULL_FACE);
+    GL11.glCullFace(GL11.GL_BACK);
   }
   
   public void prepare() {
     GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
   }
   
-  public void render(Camera camera, RawModel model) {
+  public void render(Camera camera, Model model) {
     testShader.bind();
+    testShader.setDiffuseSampler(0);
     testShader.setMvpMatrix(camera.getCameraMatrix());
-    model.bind();
-    GL11.glDrawElements(GL11.GL_TRIANGLES, model.getVertexCount(), GL11.GL_UNSIGNED_INT, 0);
+    model.render();
     GL30.glBindVertexArray(0);
   }
   
