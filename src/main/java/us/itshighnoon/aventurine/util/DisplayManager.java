@@ -97,7 +97,7 @@ public class DisplayManager {
     return singleton.currentHeight;
   }
   
-  public static boolean getKeyDown(int keyCode) {
+  public static boolean isKeyDown(int keyCode) {
     if (singleton == null) {
       Logger.log("0021 Input status queried before window init", Logger.Severity.WARN);
       return false;

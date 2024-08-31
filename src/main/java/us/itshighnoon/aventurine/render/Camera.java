@@ -46,9 +46,9 @@ public class Camera {
   
   public Matrix4f getCameraMatrix() {
     Matrix4f viewMatrix = new Matrix4f();
-    viewMatrix.rotate(rotation.z, 0.0f, 0.0f, 1.0f);
-    viewMatrix.rotate(rotation.x, 1.0f, 0.0f, 0.0f);
-    viewMatrix.rotate(rotation.y, 0.0f, 1.0f, 0.0f);
+    viewMatrix.rotate(-rotation.z, 0.0f, 0.0f, 1.0f);
+    viewMatrix.rotate(-rotation.x, 1.0f, 0.0f, 0.0f);
+    viewMatrix.rotate(-rotation.y, 0.0f, 1.0f, 0.0f);
     viewMatrix.translate(-position.x, -position.y, -position.z);
     projectionMatrix.mul(viewMatrix, viewMatrix); // avoid recalculating proj matrix every frame
     return viewMatrix;
