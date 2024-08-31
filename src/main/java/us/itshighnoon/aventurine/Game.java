@@ -1,5 +1,7 @@
 package us.itshighnoon.aventurine;
 
+import org.joml.Vector3f;
+
 import us.itshighnoon.aventurine.render.Camera;
 import us.itshighnoon.aventurine.render.Model;
 import us.itshighnoon.aventurine.render.Renderer;
@@ -14,9 +16,12 @@ public class Game {
     camera.position.y = -1.0f;
     camera.rotation.x = (float)Math.toRadians(-90.0);
     DisplayManager.setCamera(camera);
+    Vector3f modelPosition = new Vector3f();
+    Vector3f modelRotation = new Vector3f();
     while (!DisplayManager.closeRequested()) {
+      modelRotation.z += 0.01f;
       renderer.prepare();
-      renderer.render(camera, model);
+      renderer.render(camera, modelPosition, modelRotation, model);
       DisplayManager.refresh();
     }
     model.cleanup();

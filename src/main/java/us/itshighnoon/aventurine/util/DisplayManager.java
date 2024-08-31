@@ -33,6 +33,7 @@ public class DisplayManager {
     GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
     GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
     GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, GLFW.GLFW_TRUE);
+    GLFW.glfwWindowHint(GLFW.GLFW_SAMPLES, 4);
     this.window = GLFW.glfwCreateWindow(width, height, title, monitor, 0);
     if (this.window == 0) {
       Logger.log("0007 Failed to create GLFW window", Logger.Severity.ERROR);

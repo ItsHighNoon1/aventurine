@@ -2,7 +2,7 @@ package us.itshighnoon.aventurine.util;
 
 import us.itshighnoon.aventurine.Game;
 
-// highest log #: 0023
+// highest log #: 0029
 
 public class EntryPoint {
   public static void main(String[] args) {
@@ -19,6 +19,7 @@ public class EntryPoint {
       logger = new Logger(logFile, logStdout, false);
     }
     DisplayManager displayManager = new DisplayManager();
+    ResourceManager resourceManager = new ResourceManager();
     
     Logger.log("0004 Starting game", Logger.Severity.INFO);
     Game game = new Game();
@@ -30,6 +31,7 @@ public class EntryPoint {
       e.printStackTrace();
     }
     
+    resourceManager.cleanup();
     displayManager.destroy();
     if (logger != null) {
       logger.stop();
