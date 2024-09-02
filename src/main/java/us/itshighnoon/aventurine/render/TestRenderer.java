@@ -3,25 +3,20 @@ package us.itshighnoon.aventurine.render;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL30;
 
-import us.itshighnoon.aventurine.shader.TestShader;
+import us.itshighnoon.aventurine.render.mem.Model;
+import us.itshighnoon.aventurine.render.shader.TestShader;
 
-public class Renderer {
+public class TestRenderer {
   private TestShader testShader;
   
-  public Renderer() {
+  public TestRenderer() {
     this.testShader = new TestShader();
-    GL11.glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
-    GL11.glEnable(GL11.GL_DEPTH_TEST);
-    GL11.glEnable(GL11.GL_CULL_FACE);
-    GL11.glCullFace(GL11.GL_BACK);
-    GL11.glEnable(GL13.GL_MULTISAMPLE);
   }
   
   public void prepare() {
-    GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+    GL11.glEnable(GL11.GL_DEPTH_TEST);
   }
   
   public void render(Camera camera, Vector3f position, Vector3f rotation, Model model) {

@@ -1,4 +1,4 @@
-package us.itshighnoon.aventurine.shader;
+package us.itshighnoon.aventurine.render.shader;
 
 import java.io.IOException;
 import java.nio.file.Files;

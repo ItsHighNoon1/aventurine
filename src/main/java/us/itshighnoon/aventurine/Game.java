@@ -9,15 +9,16 @@ import org.lwjgl.glfw.GLFW;
 
 import us.itshighnoon.aventurine.map.OsmPbfReader;
 import us.itshighnoon.aventurine.render.Camera;
-import us.itshighnoon.aventurine.render.Model;
-import us.itshighnoon.aventurine.render.Renderer;
+import us.itshighnoon.aventurine.render.MasterRenderer;
+import us.itshighnoon.aventurine.render.mem.Model;
 import us.itshighnoon.aventurine.util.DisplayManager;
 
 public class Game {
   public void run() {
-    Renderer renderer = new Renderer();
+    MasterRenderer renderer = new MasterRenderer();
     Model model = Model.loadAll("res/ignore/qq/qq.fbx");
     Camera camera = new Camera(0.1f, 1000.0f, (float) Math.toRadians((double) 90.0f));
+    renderer.setCamera(camera);
     camera.position.x = -40.0f * 10.0f;
     camera.position.z = 25.0f;
     camera.position.y = 18.0f * 10.0f / 0.819f;
@@ -68,8 +69,9 @@ public class Game {
 
       renderer.prepare();
       for (Vector3f position : lessPositions) {
-        renderer.render(camera, position, modelRotation, model);
+        renderer.submitTest(model, position, modelRotation);
       }
+      renderer.submitGui(700, 400, 100, 100);
       DisplayManager.refresh();
     }
     model.cleanup();

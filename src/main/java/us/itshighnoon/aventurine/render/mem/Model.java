@@ -1,4 +1,4 @@
-package us.itshighnoon.aventurine.render;
+package us.itshighnoon.aventurine.render.mem;
 
 import java.nio.file.Path;
 import java.util.Arrays;

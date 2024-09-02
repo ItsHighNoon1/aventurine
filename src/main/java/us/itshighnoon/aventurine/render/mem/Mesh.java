@@ -1,4 +1,4 @@
-package us.itshighnoon.aventurine.render;
+package us.itshighnoon.aventurine.render.mem;
 
 import java.nio.IntBuffer;
 
@@ -10,30 +10,37 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
-import us.itshighnoon.aventurine.util.Logger;
-
 public class Mesh implements Comparable<Mesh> {
   private int vao;
   private int vbo;
   private int ebo;
   private int vCount;
   private int materialIdx;
-  
-  public Mesh(float[] vertices) {
+  private int mode;
+
+  public Mesh() {
     this.vbo = GL15.glGenBuffers();
+    this.ebo = GL15.glGenBuffers();
     this.vao = GL30.glGenVertexArrays();
-    this.vCount = vertices.length / 3;
-    if (vertices.length % 3 != 0) {
-      Logger.log("0013 Uneven number of vertices specified for model", Logger.Severity.WARN);
-    }
+    this.vCount = 4;
+    float vertices[] = { 0.0f, 0.0f, 0.0f, 1.0f,
+        0.0f, -1.0f, 0.0f, 0.0f,
+        1.0f, 0.0f, 1.0f, 1.0f,
+        1.0f, -1.0f, 1.0f, 0.0f };
+    this.ebo = 0;
+    this.vCount = 4;
+    this.materialIdx = -1; // Only has meaning within a Model
+    this.mode = GL11.GL_TRIANGLE_STRIP;
     GL30.glBindVertexArray(this.vao);
     GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.vbo);
     GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vertices, GL15.GL_STATIC_DRAW);
-    GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 12, 0); // 12 is sizeof(float) * 3
+    GL20.glVertexAttribPointer(0, 2, GL11.GL_FLOAT, false, 16, 0);
+    GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 16, 8);
     GL20.glEnableVertexAttribArray(0);
+    GL20.glEnableVertexAttribArray(1);
     GL30.glBindVertexArray(0);
   }
-  
+
   public Mesh(AIMesh aiMesh) {
     float[] vertexData = new float[aiMesh.mNumVertices() * 8];
     boolean hasTexture = aiMesh.mNumUVComponents().get() >= 2;
@@ -45,7 +52,7 @@ public class Mesh implements Comparable<Mesh> {
       vertexData[vertexIdx * 8 + 0] = position.x();
       vertexData[vertexIdx * 8 + 1] = position.y();
       vertexData[vertexIdx * 8 + 2] = position.z();
-      
+
       if (hasTexture) {
         AIVector3D texCoords = aiTexCoords.get(vertexIdx);
         vertexData[vertexIdx * 8 + 3] = texCoords.x();
@@ -54,13 +61,13 @@ public class Mesh implements Comparable<Mesh> {
         vertexData[vertexIdx * 8 + 3] = 0.0f;
         vertexData[vertexIdx * 8 + 4] = 0.0f;
       }
-      
+
       AIVector3D normal = aiNormals.get(vertexIdx);
       vertexData[vertexIdx * 8 + 5] = normal.x();
       vertexData[vertexIdx * 8 + 6] = normal.y();
       vertexData[vertexIdx * 8 + 7] = normal.z();
     }
-    
+
     int[] indexData = new int[aiMesh.mNumFaces() * 3];
     AIFace.Buffer aiFaces = aiMesh.mFaces();
     for (int faceIdx = 0; faceIdx < aiMesh.mNumFaces(); faceIdx++) {
@@ -69,9 +76,10 @@ public class Mesh implements Comparable<Mesh> {
       indexData[faceIdx * 3 + 1] = faceIndices.get(1);
       indexData[faceIdx * 3 + 2] = faceIndices.get(2);
     }
-    
+
     this.vCount = indexData.length;
     this.materialIdx = aiMesh.mMaterialIndex();
+    this.mode = GL11.GL_TRIANGLES;
     this.vbo = GL15.glGenBuffers();
     this.ebo = GL15.glGenBuffers();
     this.vao = GL30.glGenVertexArrays();
@@ -88,25 +96,29 @@ public class Mesh implements Comparable<Mesh> {
     GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indexData, GL15.GL_STATIC_DRAW);
     GL30.glBindVertexArray(0);
   }
-  
+
   public int getVao() {
     return this.vao;
   }
-  
+
   public int getVertexCount() {
     return this.vCount;
   }
-  
+
   public int getMaterialIdx() {
     return this.materialIdx;
   }
-  
+
+  public int getMode() {
+    return this.mode;
+  }
+
   public void cleanup() {
     GL30.glDeleteVertexArrays(this.vao);
     GL15.glDeleteBuffers(this.vbo);
     GL15.glDeleteBuffers(this.ebo);
   }
-  
+
   @Override
   public int hashCode() {
     return vao;

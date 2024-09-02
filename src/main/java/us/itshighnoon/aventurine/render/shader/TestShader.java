@@ -1,4 +1,4 @@
-package us.itshighnoon.aventurine.shader;
+package us.itshighnoon.aventurine.render.shader;
 
 import org.joml.Matrix4f;
 
