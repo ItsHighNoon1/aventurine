@@ -2,7 +2,7 @@ package us.itshighnoon.aventurine.util;
 
 import us.itshighnoon.aventurine.Game;
 
-// highest log #: 0030
+// highest log #: 0037
 
 public class EntryPoint {
   public static void main(String[] args) {
@@ -28,7 +28,7 @@ public class EntryPoint {
       Logger.log("0011 Stopped game", Logger.Severity.INFO);
     } catch (Exception e) {
       Logger.log("0012 Stopped game with exception", Logger.Severity.ERROR);
-      e.printStackTrace();
+      Logger.logStacktrace(e);
     }
     
     resourceManager.cleanup();

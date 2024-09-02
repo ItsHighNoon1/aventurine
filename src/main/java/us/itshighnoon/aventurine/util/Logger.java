@@ -70,6 +70,17 @@ public class Logger {
     log(message, Severity.INFO);
   }
   
+  public static void logStacktrace(Exception exception) {
+    log("0037 Stacktrace display: " + exception.getMessage(), Severity.ERROR);
+    StackTraceElement[] stackFrames = exception.getStackTrace();
+    String whitespace = "";
+    for (int frameIdx = stackFrames.length - 1; frameIdx >= 0; frameIdx--) {
+      log(String.format("0037 Stacktrace display: %s%s:%d", whitespace, stackFrames[frameIdx].getFileName(), 
+          stackFrames[frameIdx].getLineNumber()), Severity.ERROR);
+      whitespace += "  ";
+    }
+  }
+  
   public void stop() {
     logThread.shouldStop = true;
     try {
