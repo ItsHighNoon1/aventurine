@@ -13,10 +13,11 @@ public class GuiNode {
   private int width;
   private int height;
   private int texture;
+  private boolean interactible;
   private Vector2f texOffset;
   private Vector2f texSize;
   
-  public GuiNode(int x, int y, int width, int height, int texture, Vector2f texOffset, Vector2f texSize) {
+  public GuiNode(int x, int y, int width, int height, int texture, boolean interactible, Vector2f texOffset, Vector2f texSize) {
     this.children = new ArrayList<GuiNode>();
     this.listener = null;
     this.x = x;
@@ -24,12 +25,13 @@ public class GuiNode {
     this.width = width;
     this.height = height;
     this.texture = texture;
+    this.interactible = interactible;
     this.texOffset = texOffset;
     this.texSize = texSize;
   }
   
   public GuiNode(int x, int y, int width, int height, int texture) {
-    this(x, y, width, height, texture, new Vector2f(0.0f, 0.0f), new Vector2f(1.0f, 1.0f));
+    this(x, y, width, height, texture, true, new Vector2f(0.0f, 0.0f), new Vector2f(1.0f, 1.0f));
   }
 
   public List<GuiNode> getChildren() {
@@ -42,7 +44,7 @@ public class GuiNode {
   
   public GuiNode find(int mouseX, int mouseY) {
     GuiNode foundNode = null;
-    if (mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height) {
+    if (interactible && mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height) {
       foundNode = this;
     }
     for (GuiNode node : children) {

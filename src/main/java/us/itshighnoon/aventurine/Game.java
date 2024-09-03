@@ -4,10 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
+import us.itshighnoon.aventurine.layer.GuiLayer;
+import us.itshighnoon.aventurine.layer.LayerManager;
 import us.itshighnoon.aventurine.map.OsmPbfReader;
 import us.itshighnoon.aventurine.render.Camera;
 import us.itshighnoon.aventurine.render.MasterRenderer;
@@ -22,18 +23,24 @@ public class Game {
   public void run() {
     MasterRenderer renderer = new MasterRenderer();
     Model model = Model.loadAll("res/ignore/qq/qq.fbx");
+    
+    LayerManager eventHandler = new LayerManager();
     GuiNode gui = new GuiNode(100, 100, 100, 100, ResourceManager.loadTexture("res/ignore/qq/1.png"));
     GuiNode gui2 = new GuiNode(150, 150, 100, 100, ResourceManager.loadTexture("res/ignore/qq/a4.bmp"));
     gui.addChild(gui2);
     gui.setListener(new TestListener());
+    GuiLayer guiEventHandler = new GuiLayer(gui);
+    eventHandler.addFirst(guiEventHandler);
+    DisplayManager.setLayerManager(eventHandler);
+    
     Camera camera = new Camera(0.1f, 1000.0f, (float) Math.toRadians((double) 90.0f));
     renderer.setCamera(camera);
     camera.position.x = -40.0f * 10.0f;
     camera.position.z = 25.0f;
     camera.position.y = 18.0f * 10.0f / 0.819f;
     DisplayManager.setCamera(camera);
-    Vector3f modelRotation = new Vector3f((float) Math.toRadians(-90.0f), 0.0f, 0.0f);
     
+    Vector3f modelRotation = new Vector3f((float) Math.toRadians(-90.0f), 0.0f, 0.0f);
     List<Vector3f> positions = new ArrayList<Vector3f>();
     OsmPbfReader.readMap("res/ignore/map.osm.pbf", positions);
     
@@ -104,7 +111,7 @@ public class Game {
     }
 
     @Override
-    public void onScroll(int scrollVal, int x, int y) {
+    public void onScroll(int scrollX, int scrollY, int x, int y) {
       Logger.log("1004 Scrolled");
     }
   }

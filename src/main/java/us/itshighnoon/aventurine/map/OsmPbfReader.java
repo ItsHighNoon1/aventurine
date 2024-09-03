@@ -12,7 +12,7 @@ import org.joml.Vector3f;
 import us.itshighnoon.aventurine.util.Logger;
 
 public class OsmPbfReader {
-  private enum OsmBlobType {
+  private static enum OsmBlobType {
     OSM_HEADER, OSM_DATA
   };
 

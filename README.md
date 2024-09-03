@@ -15,7 +15,7 @@ The goal is to get through this list without the engine becoming an unmaintainab
   - [ ] Assemble nodes into roads
   - [ ] Store auxiliary information
 - [ ] Render OpenStreetMap roads
-- [ ] Interactive GUIs
+- [X] Interactive GUIs
 - [ ] Parse .TIF elevation data
 - [ ] Deferred renderer
 - [ ] Performance improvements

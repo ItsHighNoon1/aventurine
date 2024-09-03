@@ -7,5 +7,5 @@ public interface GuiListener {
   
   public void onClick(int mouseButton, int x, int y);
   
-  public void onScroll(int scrollVal, int x, int y);
+  public void onScroll(int scrollX, int scrollY, int x, int y);
 }
