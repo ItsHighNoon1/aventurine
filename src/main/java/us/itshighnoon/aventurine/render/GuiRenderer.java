@@ -7,6 +7,7 @@ import org.lwjgl.opengl.GL30;
 
 import us.itshighnoon.aventurine.render.mem.Mesh;
 import us.itshighnoon.aventurine.render.shader.GuiShader;
+import us.itshighnoon.aventurine.ui.GuiNode;
 import us.itshighnoon.aventurine.util.DisplayManager;
 
 public class GuiRenderer {
@@ -26,20 +27,28 @@ public class GuiRenderer {
     GL11.glDisable(GL11.GL_DEPTH_TEST);
   }
 
-  public void render(int x, int y, int width, int height) {
-    Matrix4f mMatrix = new Matrix4f();
-    float xPos = (float) x / screenWidth * 2.0f - 1.0f;
-    float yPos = (float) -y / screenHeight * 2.0f + 1.0f;
-    float xScale = (float) width / screenWidth * 2.0f;
-    float yScale = (float) height / screenHeight * 2.0f;
-    mMatrix.setTranslation(xPos, yPos, 0.0f);
-    mMatrix.scale(xScale, yScale, 0.0f);
+  public void render(GuiNode node) {
     guiShader.bind();
-    guiShader.setMMatrix(mMatrix);
-    guiShader.setTexture(0);
     GL13.glActiveTexture(GL13.GL_TEXTURE0);
     GL30.glBindVertexArray(quad.getVao());
+    renderRecursive(node);
+  }
+  
+  private void renderRecursive(GuiNode node) {
+    Matrix4f mMatrix = new Matrix4f();
+    float xPos = (float) node.getX() / screenWidth * 2.0f - 1.0f;
+    float yPos = (float) -node.getY() / screenHeight * 2.0f + 1.0f;
+    float xScale = (float) node.getWidth() / screenWidth * 2.0f;
+    float yScale = (float) node.getHeight() / screenHeight * 2.0f;
+    mMatrix.setTranslation(xPos, yPos, 0.0f);
+    mMatrix.scale(xScale, yScale, 0.0f);
+    guiShader.setMMatrix(mMatrix);
+    GL13.glBindTexture(GL11.GL_TEXTURE_2D, node.getTexture());
+    guiShader.setTextureParms(0, node.getTexOffset(), node.getTexSize());
     GL11.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, quad.getVertexCount());
+    for (GuiNode child : node.getChildren()) {
+      render(child);
+    }
   }
 
   public void cleanup() {

@@ -5,4 +5,5 @@
 .settings/
 target/
 nsight/
-res/ignore/
+res/ignore/*
+!res/ignore/README.md

@@ -5,6 +5,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 
 import us.itshighnoon.aventurine.render.mem.Model;
+import us.itshighnoon.aventurine.ui.GuiNode;
 
 public class MasterRenderer {
   private TestRenderer testRenderer;
@@ -34,9 +35,9 @@ public class MasterRenderer {
     testRenderer.render(camera, position, rotation, model);
   }
   
-  public void submitGui(int x, int y, int width, int height) {
+  public void submitGui(GuiNode gui) {
     guiRenderer.prepare();
-    guiRenderer.render(x, y, width, height);
+    guiRenderer.render(gui);
   }
   
   public void cleanup() {

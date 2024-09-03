@@ -7,8 +7,10 @@ out vec2 v_texCoords;
 out vec3 v_normal;
 
 uniform mat4 u_mMatrix;
+uniform vec2 u_texOffset;
+uniform vec2 u_texSize;
 
 void main() {
-  v_texCoords = a_texCoords;
+  v_texCoords = u_texOffset + a_texCoords * u_texSize;
   gl_Position = u_mMatrix * vec4(a_position.x, a_position.y, 0.0, 1.0);
 }

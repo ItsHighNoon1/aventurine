@@ -65,8 +65,12 @@ public class ShaderProgram {
     return GL20.glGetUniformLocation(this.shaderProgram, uniformName);
   }
   
-  protected void uniform1i(int location, int value) {
-    GL20.glUniform1i(location, value);
+  protected void uniform1i(int location, int i) {
+    GL20.glUniform1i(location, i);
+  }
+  
+  protected void uniform2f(int location, float f1, float f2) {
+    GL20.glUniform2f(location, f1, f2);
   }
   
   protected void uniformMat4(int location, Matrix4f mat) {
