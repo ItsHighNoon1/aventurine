@@ -1,4 +1,4 @@
-package us.itshighnoon.aventurine.map;
+package us.itshighnoon.aventurine.map.io;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;

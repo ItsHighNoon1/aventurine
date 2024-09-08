@@ -17,6 +17,8 @@ public class DisplayManager {
   private long window;
   private int currentWidth;
   private int currentHeight;
+  private long lastTimeNanos;
+  private float lastFrameTime;
 
   public DisplayManager(int width, int height, String title, long monitor, int vsync) {
     if (singleton != null) {
@@ -115,6 +117,10 @@ public class DisplayManager {
       return;
     }
     GLFW.glfwSwapBuffers(singleton.window);
+    long currentTimeNanos = System.nanoTime();
+    long diff = currentTimeNanos - singleton.lastTimeNanos;
+    singleton.lastTimeNanos = currentTimeNanos;
+    singleton.lastFrameTime = (float) (diff / 1000000000.0f);
     GLFW.glfwPollEvents();
   }
 
@@ -140,6 +146,14 @@ public class DisplayManager {
       return false;
     }
     return GLFW.glfwGetKey(singleton.window, keyCode) == GLFW.GLFW_PRESS;
+  }
+
+  public static float getLastFrameTime() {
+    if (singleton == null) {
+      Logger.log("0051 Queried frame time before window init", Logger.Severity.WARN);
+      return 0.0f;
+    }
+    return singleton.lastFrameTime;
   }
 
   public void destroy() {

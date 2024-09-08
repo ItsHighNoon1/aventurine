@@ -1,7 +1,8 @@
-package us.itshighnoon.aventurine.map;
+package us.itshighnoon.aventurine.map.io;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.DataFormatException;
@@ -16,10 +17,11 @@ public class OsmPbfReader {
     OSM_HEADER, OSM_DATA
   };
 
-  public static void readMap(String filepath, List<Vector3f> outList) {
+  public static void readMap(Path filepath, List<Vector3f> outList, double latMin, double latMax, double lonMin,
+      double lonMax, double latScale, double lonScale, double latCenter, double lonCenter) {
     // https://wiki.openstreetmap.org/wiki/PBF_Format
     try {
-      RandomAccessFile file = new RandomAccessFile(filepath, "r");
+      RandomAccessFile file = new RandomAccessFile(filepath.toFile(), "r");
       ProtobufReader protoReader = new ProtobufReader(file);
 
       while (file.getFilePointer() < file.length()) {
@@ -108,16 +110,20 @@ public class OsmPbfReader {
         }
 
         // Defer to blob reader
-        readBlob(new ProtobufReader(uncompressedData), blobType, outList);
+        readBlob(new ProtobufReader(uncompressedData), blobType, outList, latMin, latMax, lonMin, lonMax, latScale,
+            lonScale, latCenter, lonCenter);
       }
       file.close();
     } catch (IOException e) {
       Logger.log("0030 Failed to load map " + filepath, Logger.Severity.ERROR);
+      return;
     }
     Logger.log("0041 Successfully loaded map " + filepath, Logger.Severity.INFO);
   }
 
-  private static void readBlob(ProtobufReader reader, OsmBlobType type, List<Vector3f> outList) throws IOException {
+  private static void readBlob(ProtobufReader reader, OsmBlobType type, List<Vector3f> outList, double latMin,
+      double latMax, double lonMin, double lonMax, double latScale, double lonScale, double latCenter, double lonCenter)
+      throws IOException {
     if (type == OsmBlobType.OSM_HEADER || type == null) {
       // Wow! This is useless!
       return;
@@ -168,7 +174,7 @@ public class OsmPbfReader {
                 }
                 break;
               case 8:
-                long denseLatsEnd = reader.readVarint() + reader.getCursor(); 
+                long denseLatsEnd = reader.readVarint() + reader.getCursor();
                 long lastLat = 0;
                 while (reader.getCursor() < denseLatsEnd) {
                   long currentLat = reader.readVarintSigned() + lastLat;
@@ -193,9 +199,14 @@ public class OsmPbfReader {
               Logger.log("0040 Dense arrays not all same size");
             } else {
               for (int denseIdx = 0; denseIdx < denseIds.size(); denseIdx++) {
-                float realLatitude = (float)(0.000000001 * (latOffset + (granularity * denseLats.get(denseIdx))));
-                float realLongitude = (float)(0.000000001 * (lonOffset + (granularity * denseLons.get(denseIdx))));
-                outList.add(new Vector3f(realLongitude, realLatitude, 0.0f));
+                double realLatitude = 0.000000002 * (latOffset + (granularity * denseLats.get(denseIdx)));
+                double realLongitude = 0.000000002 * (lonOffset + (granularity * denseLons.get(denseIdx)));
+                if (realLatitude >= latMin && realLatitude < latMax && realLongitude >= lonMin
+                    && realLongitude < lonMax) {
+                  double adjLatitude = realLatitude - latCenter;
+                  double adjLongitude = realLongitude - lonCenter;
+                  outList.add(new Vector3f((float) (adjLongitude * lonScale), 0.0f, -(float) (adjLatitude * latScale)));
+                }
               }
             }
             break;

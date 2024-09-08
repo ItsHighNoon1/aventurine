@@ -1,0 +1,9 @@
+# comment
+
+mapfile=ignore/map.osm.pbf
+centerLat=35.783
+centerLon=-78.635
+latMul=690
+lonMul=560
+chunkSize=1000
+loadDistance=500
