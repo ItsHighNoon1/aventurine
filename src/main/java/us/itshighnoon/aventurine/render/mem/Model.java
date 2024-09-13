@@ -39,7 +39,7 @@ public class Model {
     }
     Mesh[] meshes = new Mesh[aiScene.mNumMeshes()];
     for (int meshIdx = 0; meshIdx < aiScene.mNumMeshes(); meshIdx++) {
-      meshes[meshIdx] = new Mesh(AIMesh.create(aiScene.mMeshes().get(meshIdx)));
+      meshes[meshIdx] = Mesh.loadAssimpMesh(AIMesh.create(aiScene.mMeshes().get(meshIdx)));
     }
     Material[] materials = new Material[aiScene.mNumMaterials()];
     for (int matIdx = 0; matIdx < aiScene.mNumMaterials(); matIdx++) {

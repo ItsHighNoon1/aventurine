@@ -105,8 +105,8 @@ public class MapStreamer {
     loadDistance += Math.sqrt(chunkSize * chunkSize / 2.0f);
     
     // TODO new format for per-chunk files
-    for (int gridX = -5; gridX <= 5; gridX++) {
-      for (int gridZ = -5; gridZ <= 5; gridZ++) {
+    for (int gridX = -25; gridX <= 25; gridX++) {
+      for (int gridZ = -25; gridZ <= 25; gridZ++) {
         Path dataFile = filePath.getParent().resolve(Path.of(fileData.get("mapfile")));
         MapChunk newChunk = new MapChunk(dataFile, gridX * chunkSize, gridZ * chunkSize + chunkSize, gridX * chunkSize + chunkSize, gridZ * chunkSize);
         chunks.add(newChunk);

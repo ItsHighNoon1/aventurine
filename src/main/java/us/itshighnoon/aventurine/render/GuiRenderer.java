@@ -18,7 +18,7 @@ public class GuiRenderer {
 
   public GuiRenderer() {
     this.guiShader = new GuiShader();
-    this.quad = new Mesh();
+    this.quad = Mesh.loadQuad();
   }
 
   public void prepare() {

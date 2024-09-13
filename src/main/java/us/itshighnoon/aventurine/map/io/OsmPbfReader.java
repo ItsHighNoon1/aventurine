@@ -5,6 +5,7 @@ import java.io.RandomAccessFile;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
@@ -17,7 +18,7 @@ public class OsmPbfReader {
     OSM_HEADER, OSM_DATA
   };
 
-  public static void readMap(Path filepath, List<Vector3f> outList, double latMin, double latMax, double lonMin,
+  public static void readMap(Path filepath, Map<Long, Vector3f> outNodes, Map<Long, Long[]> outWays, double latMin, double latMax, double lonMin,
       double lonMax, double latScale, double lonScale, double latCenter, double lonCenter) {
     // https://wiki.openstreetmap.org/wiki/PBF_Format
     try {
@@ -110,7 +111,7 @@ public class OsmPbfReader {
         }
 
         // Defer to blob reader
-        readBlob(new ProtobufReader(uncompressedData), blobType, outList, latMin, latMax, lonMin, lonMax, latScale,
+        readBlob(new ProtobufReader(uncompressedData), blobType, outNodes, outWays, latMin, latMax, lonMin, lonMax, latScale,
             lonScale, latCenter, lonCenter);
       }
       file.close();
@@ -121,7 +122,7 @@ public class OsmPbfReader {
     Logger.log("0041 Successfully loaded map " + filepath, Logger.Severity.INFO);
   }
 
-  private static void readBlob(ProtobufReader reader, OsmBlobType type, List<Vector3f> outList, double latMin,
+  private static void readBlob(ProtobufReader reader, OsmBlobType type, Map<Long, Vector3f> outNodes, Map<Long, Long[]> outWays, double latMin,
       double latMax, double lonMin, double lonMax, double latScale, double lonScale, double latCenter, double lonCenter)
       throws IOException {
     if (type == OsmBlobType.OSM_HEADER || type == null) {
@@ -154,9 +155,11 @@ public class OsmPbfReader {
           long primitiveIdentifier = reader.readVarint();
           switch ((int) (primitiveIdentifier >> 3)) {
           case 1:
+            // 1 is "Node"
             Logger.log("0038 Node found, unsure what to do", Logger.Severity.WARN);
             throw new IOException();
           case 2:
+            // 2 is "DenseNodes"
             List<Long> denseIds = new ArrayList<Long>();
             List<Long> denseLats = new ArrayList<Long>();
             List<Long> denseLons = new ArrayList<Long>();
@@ -199,24 +202,57 @@ public class OsmPbfReader {
               Logger.log("0040 Dense arrays not all same size");
             } else {
               for (int denseIdx = 0; denseIdx < denseIds.size(); denseIdx++) {
-                double realLatitude = 0.000000002 * (latOffset + (granularity * denseLats.get(denseIdx)));
-                double realLongitude = 0.000000002 * (lonOffset + (granularity * denseLons.get(denseIdx)));
+                double realLatitude = 0.000000001 * (latOffset + (granularity * denseLats.get(denseIdx)));
+                double realLongitude = 0.000000001 * (lonOffset + (granularity * denseLons.get(denseIdx)));
                 if (realLatitude >= latMin && realLatitude < latMax && realLongitude >= lonMin
                     && realLongitude < lonMax) {
                   double adjLatitude = realLatitude - latCenter;
                   double adjLongitude = realLongitude - lonCenter;
-                  outList.add(new Vector3f((float) (adjLongitude * lonScale), 0.0f, -(float) (adjLatitude * latScale)));
+                  outNodes.put(denseIds.get(denseIdx), new Vector3f((float) (adjLongitude * lonScale), 0.0f, -(float) (adjLatitude * latScale)));
                 }
               }
             }
             break;
           case 3:
-            reader.skipThisField(identifier);
+            // 3 is "Way"
+            long wayEnd = reader.readVarint() + reader.getCursor();
+            long wayId = 0;
+            Long[] wayNodes = null;
+            while (reader.getCursor() < wayEnd) {
+              long wayIdentifier = reader.readVarint();
+              switch ((int) (wayIdentifier >> 3)) {
+              case 1:
+                wayId = reader.readVarint();
+                break;
+              case 8:
+                List<Long> nodeIds = new ArrayList<Long>();
+                long nodeId = 0;
+                long nodeIdsEnd = reader.readVarint() + reader.getCursor();
+                while (reader.getCursor() < nodeIdsEnd) {
+                  nodeId = reader.readVarintSigned() + nodeId;
+                  nodeIds.add(nodeId);
+                }
+                wayNodes = new Long[nodeIds.size()];
+                for (int nodeIdx = 0; nodeIdx < nodeIds.size(); nodeIdx++) {
+                  wayNodes[nodeIdx] = nodeIds.get(nodeIdx);
+                }
+                break;
+              default:
+                reader.skipThisField(wayIdentifier);
+              }
+            }
+            if (wayNodes == null || wayNodes.length == 0) {
+              Logger.log("0052 Read empty way", Logger.Severity.WARN);
+            } else {
+              outWays.put(wayId, wayNodes);
+            }
             break;
           case 4:
+            // 4 is "Relation"
             reader.skipThisField(identifier);
             break;
           case 5:
+            // 5 is "ChangeSet"
             reader.skipThisField(identifier);
             break;
           default:

@@ -55,7 +55,7 @@ public class ProtobufReader {
     if ((varint & 0x01) != 0) {
       varint = -varint - 1;
     }
-    return varint >> 2;
+    return varint >> 1;
   }
 
   public String readString() throws IOException {

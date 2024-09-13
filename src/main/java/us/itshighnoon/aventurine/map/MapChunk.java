@@ -2,18 +2,21 @@ package us.itshighnoon.aventurine.map;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 import us.itshighnoon.aventurine.map.io.OsmPbfReader;
+import us.itshighnoon.aventurine.render.mem.Mesh;
 import us.itshighnoon.aventurine.util.Logger;
 
 public class MapChunk {
   private Path dataFile;
-  private List<Vector3f> nodes;
+  private List<Mesh> roads;
   private float northEdge;
   private float southEdge;
   private float eastEdge;
@@ -22,7 +25,7 @@ public class MapChunk {
   
   public MapChunk(Path dataFile, float west, float south, float east, float north) {
     this.dataFile = dataFile;
-    this.nodes = new ArrayList<Vector3f>();
+    this.roads = new ArrayList<Mesh>();
     this.northEdge = north;
     this.southEdge = south;
     this.eastEdge = east;
@@ -30,8 +33,8 @@ public class MapChunk {
     this.loaded = false;
   }
   
-  public List<Vector3f> getNodes() {
-    return nodes;
+  public List<Mesh> getRoads() {
+    return roads;
   }
   
   public boolean isLoaded() {
@@ -44,15 +47,32 @@ public class MapChunk {
     double lonMin = westEdge / lonScale + lonCenter;
     double lonMax = eastEdge / lonScale + lonCenter;
     Logger.log(String.format("0050 Loading chunk at %.4fN %.4fE", (latMin + latMax) / 2.0f, (lonMin + lonMax) / 2.0f));
-    OsmPbfReader.readMap(dataFile, nodes, latMin, latMax, lonMin, lonMax, latScale, lonScale, latCenter, lonCenter);
-    Random rand = new Random();
-    List<Vector3f> reducedNodes = new ArrayList<Vector3f>();
-    for (Vector3f node : nodes) {
-      if (rand.nextFloat() < 0.0003f) {
-        reducedNodes.add(node);
+    
+    Map<Long, Vector3f> nodes = new HashMap<Long, Vector3f>();
+    Map<Long, Long[]> ways = new HashMap<Long, Long[]>();
+    OsmPbfReader.readMap(dataFile, nodes, ways, latMin, latMax, lonMin, lonMax, latScale, lonScale, latCenter, lonCenter);
+    
+    for (Entry<Long, Long[]> way : ways.entrySet()) {
+      List<Vector3f> roadNodes = new ArrayList<Vector3f>();
+      for (Long nodeId : way.getValue()) {
+        Vector3f nodePos = nodes.get(nodeId);
+        if (nodePos == null) {
+          continue;
+        }
+        if (nodePos.x >= westEdge && nodePos.x < eastEdge && nodePos.z >= northEdge && nodePos.z < southEdge) {
+          roadNodes.add(nodePos);
+        }
+      }
+      if (!roadNodes.isEmpty()) {
+        Vector3f[] roadArray = new Vector3f[roadNodes.size()];
+        for (int roadNodeIdx = 0; roadNodeIdx < roadNodes.size(); roadNodeIdx++) {
+          roadArray[roadNodeIdx] = roadNodes.get(roadNodeIdx);
+        }
+        Mesh road = Mesh.awaitLineMesh(roadArray);
+        roads.add(road);
       }
     }
-    nodes = reducedNodes;
+    
     loaded = true;
   }
   
@@ -62,7 +82,10 @@ public class MapChunk {
     } else {
       Logger.log("0049 Double-unload on chunk", Logger.Severity.WARN);
     }
-    nodes.clear();
+    for (Mesh road : roads) {
+      road.cleanup();
+    }
+    roads.clear();
   }
   
   public float distance2(float x, float z) {

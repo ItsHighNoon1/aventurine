@@ -9,6 +9,7 @@ import us.itshighnoon.aventurine.map.MapChunk;
 import us.itshighnoon.aventurine.map.io.MapStreamer;
 import us.itshighnoon.aventurine.render.Camera;
 import us.itshighnoon.aventurine.render.MasterRenderer;
+import us.itshighnoon.aventurine.render.mem.Mesh;
 import us.itshighnoon.aventurine.render.mem.Model;
 import us.itshighnoon.aventurine.ui.GuiListener;
 import us.itshighnoon.aventurine.ui.GuiNode;
@@ -38,6 +39,7 @@ public class Game {
 
     while (!DisplayManager.closeRequested()) {
       mapStreamer.loadChunksAround(camera.position.x, camera.position.z, true);
+      Mesh.serviceOutstandingLoads();
 
       float speed = DisplayManager.getLastFrameTime() * 100.0f;
       if (DisplayManager.isKeyDown(GLFW.GLFW_KEY_LEFT_SHIFT)) {
@@ -77,8 +79,9 @@ public class Game {
       renderer.prepare();
       for (MapChunk chunk : mapStreamer.getMapChunks()) {
         if (chunk.isLoaded()) {
-          for (Vector3f node : chunk.getNodes()) {
-            renderer.submitTest(model, node, new Vector3f((float) Math.toRadians(-90), 0.0f, 0.0f));
+          for (Mesh road : chunk.getRoads()) {
+            renderer.submitLine(road, new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.0f, 0.0f, 0.0f));
+            //renderer.submitTest(model, node, new Vector3f((float) Math.toRadians(-90), 0.0f, 0.0f));
           }
         }
       }

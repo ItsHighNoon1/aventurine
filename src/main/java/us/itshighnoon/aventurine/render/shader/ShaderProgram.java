@@ -73,6 +73,10 @@ public class ShaderProgram {
     GL20.glUniform2f(location, f1, f2);
   }
   
+  protected void uniform3f(int location, float f1, float f2, float f3) {
+    GL20.glUniform3f(location, f1, f2, f3);
+  }
+  
   protected void uniformMat4(int location, Matrix4f mat) {
     float[] matData = new float[16];
     mat.get(matData);
