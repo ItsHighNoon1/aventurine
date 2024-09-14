@@ -1,6 +1,8 @@
 package us.itshighnoon.aventurine.render.mem;
 
 import java.nio.IntBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
 
@@ -115,6 +117,21 @@ public class Mesh implements Comparable<Mesh> {
     lineLoadRequests.add(llq);
     llq.await();
     return llq.getMesh();
+  }
+  
+  public static List<Mesh> awaitLineMeshMulti(List<Vector3f[]> lines) {
+    List<LineLoadRequest> llqs = new ArrayList<LineLoadRequest>();
+    for (Vector3f[] line : lines) {
+      LineLoadRequest llq = new LineLoadRequest(line);
+      llqs.add(llq);
+      lineLoadRequests.add(llq);
+    }
+    List<Mesh> meshes = new ArrayList<Mesh>();
+    for (LineLoadRequest llq : llqs) {
+      llq.await();
+      meshes.add(llq.getMesh());
+    }
+    return meshes;
   }
 
   public static Mesh loadLineMesh(Vector3f[] points) {

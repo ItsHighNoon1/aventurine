@@ -7,7 +7,6 @@ import java.util.Map.Entry;
 
 import org.lwjgl.opengl.ATIMeminfo;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.NVXGPUMemoryInfo;
 import org.lwjgl.stb.STBImage;
 
@@ -76,10 +75,9 @@ public class ResourceManager {
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
     GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, textureWidth[0], textureHeight[0],
         0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, textureData);
-    GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
     STBImage.stbi_image_free(textureData);
     
     singleton.loadedTextures.put(texturePath, texture);

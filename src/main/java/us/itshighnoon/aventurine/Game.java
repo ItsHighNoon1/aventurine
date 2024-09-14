@@ -33,7 +33,7 @@ public class Game {
 
     Camera camera = new Camera(0.1f, 1000.0f, (float) Math.toRadians((double) 90.0f));
     renderer.setCamera(camera);
-    camera.position.y = 10.0f;
+    camera.position.y = 100.0f;
     DisplayManager.setCamera(camera);
     MapStreamer mapStreamer = new MapStreamer("res/map.meta");
 

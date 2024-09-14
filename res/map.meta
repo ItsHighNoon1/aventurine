@@ -1,11 +1,9 @@
 # comment
 
-mapfile=ignore/map.osm.pbf
-centerLat=35.783
-centerLon=-78.635
-#latMul=6.90
-#lonMul=5.60
+mapdir=ignore/kafka/
+centerLat=35700000000
+centerLon=-78600000000
 latMul=364000
 lonMul=295420
-chunkSize=1000
+chunkSize=100000000
 loadDistance=500
