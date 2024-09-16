@@ -31,9 +31,9 @@ public class Game {
     eventHandler.addFirst(guiEventHandler);
     DisplayManager.setLayerManager(eventHandler);
 
-    Camera camera = new Camera(0.1f, 1000.0f, (float) Math.toRadians((double) 90.0f));
+    Camera camera = new Camera(10.0f, 5000.0f, (float) Math.toRadians((double) 90.0f));
     renderer.setCamera(camera);
-    camera.position.y = 100.0f;
+    camera.position.y = 1000.0f;
     DisplayManager.setCamera(camera);
     MapStreamer mapStreamer = new MapStreamer("res/map.meta");
 
@@ -41,7 +41,7 @@ public class Game {
       mapStreamer.loadChunksAround(camera.position.x, camera.position.z, true);
       Mesh.serviceOutstandingLoads();
 
-      float speed = DisplayManager.getLastFrameTime() * 100.0f;
+      float speed = DisplayManager.getLastFrameTime() * 1000.0f;
       if (DisplayManager.isKeyDown(GLFW.GLFW_KEY_LEFT_SHIFT)) {
         speed *= 3.0f;
       }
@@ -75,11 +75,12 @@ public class Game {
       if (DisplayManager.isKeyDown(GLFW.GLFW_KEY_RIGHT)) {
         camera.rotation.y -= DisplayManager.getLastFrameTime() * 3.0f;
       }
+      camera.recalculateFrustum();
 
       renderer.prepare();
       for (MapChunk chunk : mapStreamer.getMapChunks()) {
         if (chunk.isLoaded()) {
-          for (Mesh road : chunk.getRoads()) {
+          for (Mesh road : chunk.getVisibleRoads(camera)) {
             renderer.submitLine(road, new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.0f, 0.0f, 0.0f));
             //renderer.submitTest(model, node, new Vector3f((float) Math.toRadians(-90), 0.0f, 0.0f));
           }

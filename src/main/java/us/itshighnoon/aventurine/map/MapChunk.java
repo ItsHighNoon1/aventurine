@@ -1,25 +1,25 @@
 package us.itshighnoon.aventurine.map;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Set;
 
 import org.joml.Vector2f;
-import org.joml.Vector3f;
 
+import us.itshighnoon.aventurine.map.io.ProtobufReader;
+import us.itshighnoon.aventurine.render.Camera;
 import us.itshighnoon.aventurine.render.mem.Mesh;
 import us.itshighnoon.aventurine.util.Logger;
 
 public class MapChunk {
   private Path dataFile;
-  private List<Mesh> roads;
+  private List<Way> ways;
   private float northEdge;
   private float southEdge;
   private float eastEdge;
@@ -33,7 +33,7 @@ public class MapChunk {
   public MapChunk(Path dataFile, long west, long south, long east, long north, long latCenter, long lonCenter,
       double latScale, double lonScale) {
     this.dataFile = dataFile;
-    this.roads = new ArrayList<Mesh>();
+    this.ways = new ArrayList<Way>();
     this.northEdge = -(float) (0.000000001 * (north - latCenter) * latScale);
     this.southEdge = -(float) (0.000000001 * (south - latCenter) * latScale);
     this.eastEdge = (float) (0.000000001 * (east - lonCenter) * lonScale);
@@ -45,8 +45,14 @@ public class MapChunk {
     this.lonScale = lonScale;
   }
 
-  public List<Mesh> getRoads() {
-    return roads;
+  public Set<Mesh> getVisibleRoads(Camera camera) {
+    Set<Mesh> visibleRoads = new HashSet<Mesh>();
+    for (Way way : ways) {
+      if (way.getDebugMesh() != null) {
+        visibleRoads.add(way.getDebugMesh());
+      }
+    }
+    return visibleRoads;
   }
 
   public boolean isLoaded() {
@@ -56,56 +62,29 @@ public class MapChunk {
   public void load() {
     Logger.log(String.format("0050 Loading chunk at %.4f, %.4f", eastEdge, northEdge));
 
-    Map<Long, Vector3f> nodes = new HashMap<Long, Vector3f>();
-    Map<Long, Long[]> ways = new HashMap<Long, Long[]>();
+    Map<Long, Node> nodes = new HashMap<Long, Node>();
 
     try {
-      DataInputStream inputStream = new DataInputStream(
-          new BufferedInputStream(new FileInputStream(dataFile.toString())));
-      long nodesLen = inputStream.readLong();
-      for (int nodeIdx = 0; nodeIdx < nodesLen; nodeIdx++) {
-        long id = inputStream.readLong();
-        long lat = inputStream.readLong() - latCenter;
-        long lon = inputStream.readLong() - lonCenter;
-
-        nodes.put(id, new Vector3f((float) (0.000000001 * lon * lonScale), 0.0f, -(float) (0.000000001 * lat * latScale)));
+      ProtobufReader reader = new ProtobufReader(new File(dataFile.toString()));
+      int numNodes = (int) reader.readVarint();
+      Node lastNode = null;
+      for (int nodeIdx = 0; nodeIdx < numNodes; nodeIdx++) {
+        Node node = Node.readFromKafka(reader, lastNode, latCenter, lonCenter, latScale, lonScale);
+        lastNode = node;
+        nodes.put(node.getId(), node);
       }
-
-      long waysLen = inputStream.readLong();
-      for (int wayIdx = 0; wayIdx < waysLen; wayIdx++) {
-        long id = inputStream.readLong();
-        int numberNodes = (int) inputStream.readLong();
-        Long[] wayNodes = new Long[numberNodes];
-        for (int nodeIdx = 0; nodeIdx < wayNodes.length; nodeIdx++) {
-          wayNodes[nodeIdx] = inputStream.readLong();
-        }
-        ways.put(id, wayNodes);
+      int numWays = (int) reader.readVarint();
+      for (int wayIdx = 0; wayIdx < numWays; wayIdx++) {
+        Way way = Way.readFromKafka(reader, nodes);
+        ways.add(way);
       }
-      inputStream.close();
     } catch (IOException e) {
-      Logger.log("0053 Failed to load map " + dataFile.toString(), Logger.Severity.ERROR);
+      Logger.log("0060 Failed to load chunk file " + dataFile.toString());
     }
 
-    List<Vector3f[]> roadArrays = new ArrayList<Vector3f[]>();
-    for (Entry<Long, Long[]> way : ways.entrySet()) {
-      List<Vector3f> roadNodes = new ArrayList<Vector3f>();
-      for (Long nodeId : way.getValue()) {
-        Vector3f nodePos = nodes.get(nodeId);
-        if (nodePos == null) {
-          continue;
-        }
-        roadNodes.add(nodePos);
-      }
-      if (!roadNodes.isEmpty()) {
-        Vector3f[] roadArray = new Vector3f[roadNodes.size()];
-        for (int roadNodeIdx = 0; roadNodeIdx < roadNodes.size(); roadNodeIdx++) {
-          roadArray[roadNodeIdx] = roadNodes.get(roadNodeIdx);
-        }
-        roadArrays.add(roadArray);
-      }
+    for (Way way : ways) {
+      way.buildMeshAsync();
     }
-    roads.addAll(Mesh.awaitLineMeshMulti(roadArrays));
-
     Logger.log(String.format("0054 Finished loading chunk at %.4f, %.4f", eastEdge, northEdge));
     loaded = true;
   }
@@ -116,10 +95,10 @@ public class MapChunk {
     } else {
       Logger.log("0049 Double-unload on chunk", Logger.Severity.WARN);
     }
-    for (Mesh road : roads) {
-      road.cleanup();
+    for (Way way : ways) {
+      way.cleanup();
     }
-    roads.clear();
+    ways.clear();
   }
 
   public float distance2(float x, float z) {

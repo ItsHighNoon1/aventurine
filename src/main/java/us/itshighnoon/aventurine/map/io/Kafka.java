@@ -1,43 +1,40 @@
 package us.itshighnoon.aventurine.map.io;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.zip.Inflater;
 
 import org.joml.Vector2L;
 
+import us.itshighnoon.aventurine.map.Node;
+import us.itshighnoon.aventurine.map.Way;
+
 /**
- * Kafka.java - step 1 of reformatting osm.pbf
+ * Kafka.java - convert osm.pbf files to .kfk files
  */
 public class Kafka {
   public static void main(String[] args) {
     System.out.println("Started phase 1");
     phase1(args);
     System.out.println("Started phase 2");
-    Map<Long, Long[]> wayToNodes = new HashMap<Long, Long[]>();
-    Map<Long, Set<Long>> nodeToWays = new HashMap<Long, Set<Long>>();
-    phase2(args, wayToNodes, nodeToWays);
-    System.out.println("Started phase 3");
-    phase3(args, wayToNodes, nodeToWays);
+    phase2(args);
     System.out.println("Done");
   }
-  
+
   /**
-   * Phase 1 - turn an osm.pbf file into a bunch of chunk files and one big ways file
+   * Phase 1 - turn an osm.pbf file into a bunch of chunk files and one big ways
+   * file
    */
   private static void phase1(String[] args) {
     Map<Vector2L, DataOutputStream> files;
@@ -47,18 +44,21 @@ public class Kafka {
       Path folder = Path.of(args[1]);
       wayFile = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(folder.toString() + "/all.ways")));
       long chunkSize = Long.parseLong(args[2]);
-      RandomAccessFile file = new RandomAccessFile(args[0], "r");
-      ProtobufReader protoReader = new ProtobufReader(file);
+      ProtobufReader protoReader = new ProtobufReader(new File(args[0]));
 
-      while (file.getFilePointer() < file.length()) {
+      while (!protoReader.finished()) {
         // 4 bytes of length which tells us when we are out of the BlobHeader
-        int blobHeaderLength = file.readInt();
-        long expectedHeaderEnd = file.getFilePointer() + blobHeaderLength;
+        int blobHeaderLength = protoReader.read();
+        blobHeaderLength = (blobHeaderLength << 8) + protoReader.read();
+        blobHeaderLength = (blobHeaderLength << 8) + protoReader.read();
+        blobHeaderLength = (blobHeaderLength << 8) + protoReader.read();
+        
+        long expectedHeaderEnd = protoReader.getCursor() + blobHeaderLength;
 
         // BlobHeader which tells us the type and size of the following Blob
         boolean isOsmData = false;
         int blobSize = 0;
-        while (file.getFilePointer() < expectedHeaderEnd) {
+        while (protoReader.getCursor() < expectedHeaderEnd) {
           long identifier = protoReader.readVarint();
           switch ((int) (identifier >> 3)) {
           case 1:
@@ -68,7 +68,6 @@ public class Kafka {
             } else if (type.equals("OSMData")) {
               isOsmData = true;
             } else {
-              file.close();
               throw new IOException();
             }
             break;
@@ -79,13 +78,13 @@ public class Kafka {
             protoReader.skipThisField(identifier);
           }
         }
-        long expectedDataEnd = file.getFilePointer() + blobSize;
+        long expectedDataEnd = protoReader.getCursor() + blobSize;
 
         // Blob which may be compressed
         byte[] compressedData = null;
         byte[] uncompressedData = null;
         int rawDataSize = 0;
-        while (file.getFilePointer() < expectedDataEnd) {
+        while (protoReader.getCursor() < expectedDataEnd) {
           long identifier = protoReader.readVarint();
           switch ((int) (identifier >> 3)) {
           case 2:
@@ -129,7 +128,7 @@ public class Kafka {
         // Defer to blob reader
         readBlob(new ProtobufReader(uncompressedData), isOsmData, files, folder, chunkSize, wayFile);
       }
-      file.close();
+      protoReader.close();
       for (DataOutputStream dos : files.values()) {
         dos.close();
       }
@@ -140,92 +139,117 @@ public class Kafka {
   }
 
   /**
-   * Phase 2 - extract way information into faster data structures
+   * Phase 2 - build kfk files
    */
-  private static void phase2(String[] args, Map<Long, Long[]> wayToNodes, Map<Long, Set<Long>> nodeToWays) {
-    Path folder = Path.of(args[1]);
-    try {
-      DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(folder.toString() + "/all.ways")));
-      while (dis.available() > 0) {
-        long wayId = dis.readLong();
-        int numberNodes = (int) dis.readLong();
-        Long[] wayNodes = new Long[numberNodes];
-        for (int nodeIdx = 0; nodeIdx < wayNodes.length; nodeIdx++) {
-          long node = dis.readLong();
-          Set<Long> containingWays = nodeToWays.get(node);
-          if (containingWays == null) {
-            containingWays = new HashSet<Long>();
-            nodeToWays.put(node, containingWays);
-          }
-          containingWays.add(wayId);
-          wayNodes[nodeIdx] = node;
-        }
-        wayToNodes.put(wayId, wayNodes);
-      }
-      dis.close();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
-  
-  /**
-   * Phase 3 - bake node files into complete data files
-   */
-  private static void phase3(String[] args, Map<Long, Long[]> wayToNodes, Map<Long, Set<Long>> nodeToWays) {
+  private static void phase2(String[] args) {
     File folder = new File(args[1]);
     File[] files = folder.listFiles();
-    for (File inFile : files) {
+    List<DataOutputStream> kfkFiles = new ArrayList<DataOutputStream>();
+    Map<Long, Integer> nodeOwner = new HashMap<Long, Integer>();
+    for (int fileIdx = 0; fileIdx < files.length; fileIdx++) {
+      File inFile = files[fileIdx];
       if (inFile.getName().endsWith(".dat")) {
-        String outFile = "/" + inFile.getName().substring(0, inFile.getName().length() - 4) + ".kfk";
-        outFile = folder.getPath() + outFile;
         try {
-          DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outFile)));
-          long nodesInFile = inFile.length() / 24;
-          DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(inFile)));
-          dos.writeLong(nodesInFile);
-          Set<Long> waysInChunk = new HashSet<Long>();
-          for (int nodeIdx = 0; nodeIdx < nodesInFile; nodeIdx++) {
-            long nodeId = dis.readLong();
-            dos.writeLong(nodeId);
-            Set<Long> waysForNode = nodeToWays.get(nodeId);
-            if (waysForNode != null) {
-              waysInChunk.addAll(waysForNode);
-            }
-            dos.writeLong(dis.readLong()); // lat
-            dos.writeLong(dis.readLong()); // lon
+          // Read in all nodes from dat
+          List<Node> fileNodes = new ArrayList<Node>();
+          Set<Long> nodesInChunk = new HashSet<Long>();
+          ProtobufReader reader = new ProtobufReader(inFile);
+          while (!reader.finished()) {
+            Node node = Node.readFromKafka(reader, null);
+            fileNodes.add(node);
+            nodesInChunk.add(node.getId());
           }
-          dis.close();
-          dos.writeLong(waysInChunk.size());
-          for (Long wayId : waysInChunk) {
-            Long[] way = wayToNodes.get(wayId);
-            dos.writeLong(wayId);
-            dos.writeLong(way.length);
-            for (long nodeIdInWay : way) {
-              dos.writeLong(nodeIdInWay);
-            }
+          
+          // Write nodes to start of kfk file
+          String outFileName = Path.of(args[1]).toString() + "/" + inFile.getName().substring(0, inFile.getName().length() - 4) + ".kfk";
+          DataOutputStream outFile = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outFileName)));
+          ProtobufWriter writer = new ProtobufWriter(outFile);
+          writer.writeVarint(fileNodes.size());
+          Node lastNode = null;
+          for (Node node : fileNodes) {
+            node.writeToKafka(writer, lastNode);
+            lastNode = node;
+            nodeOwner.put(node.getId(), kfkFiles.size());
           }
-          dos.close();
+          
+          // Add file to list for ways step
+          kfkFiles.add(outFile);
         } catch (IOException e) {
           e.printStackTrace();
         }
       }
+      System.out.printf("Nodes progress: %d / %d\n", fileIdx, files.length);
+    }
+    
+    // Read in all ways from all.ways
+    Map<Integer, Set<Way>> waysInFiles = new HashMap<Integer, Set<Way>>();
+    String waysFileName = Path.of(args[1]).toString() + "/all.ways";
+    try {
+      File waysFile = new File(waysFileName);
+      ProtobufReader reader = new ProtobufReader(waysFile);
+      long nextCheckpoint = waysFile.length() / 20;
+      while (!reader.finished()) {
+        if (reader.getCursor() > nextCheckpoint) {
+          System.out.printf("Progress through ways file: %d / %d\n", reader.getCursor(), waysFile.length());
+          nextCheckpoint += waysFile.length() / 20;
+        }
+        Way way = Way.readRawFromKafka(reader);
+        Set<Long> nodesInWay = way.getNodeSet();
+        for (long nodeId : nodesInWay) {
+          Integer fileIdx = nodeOwner.get(nodeId);
+          if (fileIdx == null) {
+            System.err.println("Node not in file");
+            continue;
+          }
+          if (waysInFiles.containsKey(fileIdx)) {
+            waysInFiles.get(fileIdx).add(way);
+          } else {
+            Set<Way> newWaysSet = new HashSet<Way>();
+            newWaysSet.add(way);
+            waysInFiles.put(fileIdx, newWaysSet);
+          }
+        }
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    System.out.println("Done with ways, finalizing files");
+    
+    // Write ways to kfk files
+    for (Entry<Integer, Set<Way>> fileWays : waysInFiles.entrySet()) {
+      int fileIdx = fileWays.getKey();
+      Set<Way> ways = fileWays.getValue();
+      DataOutputStream outFile = kfkFiles.get(fileIdx);
+      ProtobufWriter writer = new ProtobufWriter(outFile);
+      try {
+        writer.writeVarint(ways.size());
+        for (Way way : ways) {
+          way.writeToKafka(writer);
+        }
+        outFile.close();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
     }
   }
-  
+
   private static void readBlob(ProtobufReader reader, boolean isOsmData, Map<Vector2L, DataOutputStream> files,
       Path folder, long chunkSize, DataOutputStream wayFile) throws Exception {
     if (!isOsmData) {
       return;
     }
-
+    
+    List<String> stringTable = null;
+    
     while (!reader.finished()) {
       int granularity = 100;
       long latOffset = 0;
       long lonOffset = 0;
       long identifier = reader.readVarint();
-      List<String> stringTable = new ArrayList<String>();
       switch ((int) (identifier >> 3)) {
       case 1:
+        stringTable = new ArrayList<String>();
+        stringTable.add(null); // 0 index is special
         long stringTableEnd = reader.readVarint() + reader.getCursor();
         while (reader.getCursor() < stringTableEnd) {
           long stringIdentifier = reader.readVarint();
@@ -249,6 +273,7 @@ public class Kafka {
             List<Long> denseIds = new ArrayList<Long>();
             List<Long> denseLats = new ArrayList<Long>();
             List<Long> denseLons = new ArrayList<Long>();
+            List<Map<String, String>> denseAttribs = new ArrayList<Map<String, String>>();
             long denseNodesEnd = reader.readVarint() + reader.getCursor();
             while (reader.getCursor() < denseNodesEnd) {
               long denseIdentifier = reader.readVarint();
@@ -280,16 +305,39 @@ public class Kafka {
                   lastLon = currentLon;
                 }
                 break;
+              case 10:
+                long keysValsEnd = reader.readVarint() + reader.getCursor();
+                Map<String, String> currentAttribs = null;
+                while (reader.getCursor() < keysValsEnd) {
+                  int keyStringIdx = (int) reader.readVarint();
+                  if (keyStringIdx == 0) {
+                    denseAttribs.add(currentAttribs);
+                    currentAttribs = null;
+                    continue;
+                  }
+                  int valueStringIdx = (int) reader.readVarint();
+                  if (currentAttribs == null) {
+                    currentAttribs = new HashMap<String, String>();
+                  }
+                  currentAttribs.put(stringTable.get(keyStringIdx), stringTable.get(valueStringIdx));
+                }
+                break;
               default:
                 reader.skipThisField(denseIdentifier);
               }
             }
-            if (denseIds.size() != denseLats.size() || denseLats.size() != denseLons.size()) {
+            if (denseIds.size() != denseLats.size() || denseLats.size() != denseLons.size()
+                || (denseIds.size() != denseAttribs.size() && !denseAttribs.isEmpty())) {
               throw new Exception();
             } else {
               for (int denseIdx = 0; denseIdx < denseIds.size(); denseIdx++) {
                 long realLat = latOffset + (granularity * denseLats.get(denseIdx));
                 long realLon = lonOffset + (granularity * denseLons.get(denseIdx));
+                Map<String, String> attribs = null;
+                if (!denseAttribs.isEmpty()) {
+                  attribs = denseAttribs.get(denseIdx);
+                }
+                Node node = new Node(denseIds.get(denseIdx), realLat, realLon, attribs);
                 Vector2L chunkIdx = new Vector2L(realLon / chunkSize, realLat / chunkSize);
                 DataOutputStream dos = files.get(chunkIdx);
                 if (dos == null) {
@@ -297,15 +345,16 @@ public class Kafka {
                       new FileOutputStream(folder.toString() + "/" + chunkIdx.x + "." + chunkIdx.y + ".dat")));
                   files.put(chunkIdx, dos);
                 }
-                dos.writeLong(denseIds.get(denseIdx));
-                dos.writeLong(realLat);
-                dos.writeLong(realLon);
+                ProtobufWriter writer = new ProtobufWriter(dos);
+                node.writeToKafka(writer, null);
               }
             }
             break;
           case 3:
             // 3 is "Way"
             List<Long> nodeIds = new ArrayList<Long>();
+            List<Integer> keyStrings = new ArrayList<Integer>();
+            List<Integer> valueStrings = new ArrayList<Integer>();
             long wayEnd = reader.readVarint() + reader.getCursor();
             long wayId = 0;
             while (reader.getCursor() < wayEnd) {
@@ -313,6 +362,18 @@ public class Kafka {
               switch ((int) (wayIdentifier >> 3)) {
               case 1:
                 wayId = reader.readVarint();
+                break;
+              case 2:
+                long keyStringsEnd = reader.readVarint() + reader.getCursor();
+                while (reader.getCursor() < keyStringsEnd) {
+                  keyStrings.add((int) reader.readVarint());
+                }
+                break;
+              case 3:
+                long valueStringsEnd = reader.readVarint() + reader.getCursor();
+                while (reader.getCursor() < valueStringsEnd) {
+                  valueStrings.add((int) reader.readVarint());
+                }
                 break;
               case 8:
                 long nodeId = 0;
@@ -329,11 +390,28 @@ public class Kafka {
             if (nodeIds == null || nodeIds.size() == 0) {
               throw new Exception();
             } else {
-              wayFile.writeLong(wayId);
-              wayFile.writeLong(nodeIds.size());
-              for (Long node : nodeIds) {
-                wayFile.writeLong(node);
+              long[] nodeIndices = new long[nodeIds.size()];
+              for (int nodeIdx = 0; nodeIdx < nodeIndices.length; nodeIdx++) {
+                nodeIndices[nodeIdx] = nodeIds.get(nodeIdx);
               }
+              Map<String, String> attribs = null;
+              if (!keyStrings.isEmpty()) {
+                if (keyStrings.size() != valueStrings.size()) {
+                  throw new Exception();
+                }
+                attribs = new HashMap<String, String>();
+                for (int attribIdx = 0; attribIdx < keyStrings.size(); attribIdx++) {
+                  int keyStringIdx = keyStrings.get(attribIdx);
+                  int valueStringIdx = valueStrings.get(attribIdx);
+                  if (keyStringIdx == 0 || valueStringIdx == 0) {
+                    throw new Exception();
+                  }
+                  attribs.put(stringTable.get(keyStringIdx), stringTable.get(valueStringIdx));
+                }
+              }
+              Way way = new Way(wayId, attribs, nodeIndices);
+              ProtobufWriter writer = new ProtobufWriter(wayFile);
+              way.writeToKafka(writer);
             }
             break;
           case 4:

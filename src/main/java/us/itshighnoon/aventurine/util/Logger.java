@@ -45,6 +45,7 @@ public class Logger {
 
   public static void log(String message, Severity sev) {
     if (singleton == null) {
+      System.out.println(message);
       return;
     }
     StringBuilder sb = new StringBuilder();

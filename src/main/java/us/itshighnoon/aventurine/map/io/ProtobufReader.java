@@ -1,23 +1,31 @@
 package us.itshighnoon.aventurine.map.io;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 
 import us.itshighnoon.aventurine.util.Logger;
 
 public class ProtobufReader {
-  private RandomAccessFile file;
+  private BufferedInputStream file;
+  private long fileIdx;
+  private long fileLength;
   private byte[] bytes;
   private int byteIdx;
 
-  public ProtobufReader(RandomAccessFile file) {
-    this.file = file;
+  public ProtobufReader(File file) throws IOException {
+    this.file = new BufferedInputStream(new FileInputStream(file));
+    this.fileIdx = 0;
+    this.fileLength = file.length();
     this.bytes = null;
     this.byteIdx = 0;
   }
 
   public ProtobufReader(byte[] bytes, int byteIdx) {
     this.file = null;
+    this.fileIdx = 0;
+    this.fileLength = 0;
     this.bytes = bytes;
     this.byteIdx = byteIdx;
   }
@@ -28,10 +36,21 @@ public class ProtobufReader {
   
   public boolean finished() throws IOException {
     if (file != null) {
-      return file.getFilePointer() == file.length();
+      return fileIdx >= fileLength;
     } else {
-      return byteIdx == bytes.length;
+      return byteIdx >= bytes.length;
     }
+  }
+  
+  public byte read() throws IOException {
+    byte b;
+    if (file != null) {
+      b = (byte) file.read();
+      fileIdx++;
+    } else {
+      b = bytes[byteIdx++];
+    }
+    return b;
   }
 
   public long readVarint() throws IOException {
@@ -39,11 +58,7 @@ public class ProtobufReader {
     long multiplier = 1;
     byte b;
     do {
-      if (file != null) {
-        b = file.readByte();
-      } else {
-        b = bytes[byteIdx++];
-      }
+      b = read();
       currentInt += (b & 0x7F) * multiplier;
       multiplier *= 128;
     } while ((b & 0x80) != 0);
@@ -62,7 +77,8 @@ public class ProtobufReader {
     int stringLength = (int) readVarint();
     if (file != null) {
       byte[] stringBytes = new byte[stringLength];
-      file.readFully(stringBytes);
+      file.read(stringBytes);
+      fileIdx += stringLength;
       return new String(stringBytes);
     } else {
       String toReturn = new String(bytes, byteIdx, stringLength);
@@ -75,7 +91,8 @@ public class ProtobufReader {
     int bytesLength = (int) readVarint();
     byte[] bytes = new byte[bytesLength];
     if (file != null) {
-      file.readFully(bytes);
+      file.read(bytes);
+      fileIdx += bytesLength;
       return bytes;
     } else {
       System.arraycopy(this.bytes, this.byteIdx, bytes, 0, bytesLength);
@@ -84,9 +101,10 @@ public class ProtobufReader {
     }
   }
   
-  public void skipArbitrary(int bytesToSkip) throws IOException {
+  public void skipArbitrary(long bytesToSkip) throws IOException {
     if (file != null) {
-      file.skipBytes(bytesToSkip);
+      file.skip(bytesToSkip);
+      fileIdx += bytesToSkip;
     } else {
       byteIdx += bytesToSkip;
     }
@@ -94,9 +112,16 @@ public class ProtobufReader {
   
   public long getCursor() throws IOException {
     if (file != null) {
-      return file.getFilePointer();
+      return fileIdx;
     } else {
       return byteIdx;
+    }
+  }
+  
+  public void close() throws IOException {
+    if (file != null) {
+      file.close();
+      file = null;
     }
   }
 
@@ -127,15 +152,15 @@ public class ProtobufReader {
     StringBuilder hexBuilder = new StringBuilder();
     StringBuilder asciiBuilder = new StringBuilder();
     StringBuilder totalBuilder = new StringBuilder();
-    int bytesToDisplay = 64;
+    int bytesToDisplay = 256;
     byte[] hexBytes = new byte[bytesToDisplay];
     if (file != null) {
-      long originalPtr = file.getFilePointer();
-      if (file.length() - originalPtr < bytesToDisplay) {
-        bytesToDisplay = (int) (file.length() - originalPtr);
+      file.mark(bytesToDisplay);
+      if (file.available() < bytesToDisplay) {
+        bytesToDisplay = (int) (file.available());
       }
       file.read(hexBytes, 0, bytesToDisplay);
-      file.seek(originalPtr);
+      file.reset();
     } else {
       if (bytes.length - byteIdx < bytesToDisplay) {
         bytesToDisplay = bytes.length - byteIdx;

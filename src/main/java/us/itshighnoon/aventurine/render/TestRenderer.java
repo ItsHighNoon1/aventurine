@@ -3,7 +3,6 @@ package us.itshighnoon.aventurine.render;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL30;
 
 import us.itshighnoon.aventurine.render.mem.Model;
 import us.itshighnoon.aventurine.render.shader.TestShader;
@@ -30,7 +29,6 @@ public class TestRenderer {
     testShader.setDiffuseSampler(0);
     testShader.setMvpMatrix(mvpMatrix);
     model.render();
-    GL30.glBindVertexArray(0);
   }
   
   public void cleanup() {

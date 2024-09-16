@@ -1,5 +1,6 @@
 package us.itshighnoon.aventurine.render;
 
+import org.joml.FrustumIntersection;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -10,6 +11,7 @@ public class Camera {
   public Vector3f rotation;
   
   private Matrix4f projectionMatrix;
+  private FrustumIntersection frustum;
   private float aspectRatio;
   private float nearPlane;
   private float farPlane;
@@ -23,6 +25,7 @@ public class Camera {
     this.position = new Vector3f(0.0f, 0.0f, 0.0f);
     this.rotation = new Vector3f(0.0f, 0.0f, 0.0f);
     this.projectionMatrix = new Matrix4f();
+    recalculateFrustum();
   }
   
   public void setNearPlane(float nearPlane) {
@@ -52,5 +55,17 @@ public class Camera {
     viewMatrix.translate(-position.x, -position.y, -position.z);
     projectionMatrix.mul(viewMatrix, viewMatrix); // avoid recalculating proj matrix every frame
     return viewMatrix;
+  }
+  
+  public void recalculateFrustum() {
+    this.frustum = new FrustumIntersection(getCameraMatrix());
+  }
+  
+  public boolean canSeeAab(Vector3f min, Vector3f max) {
+    return frustum.testAab(min, max);
+  }
+  
+  public boolean canSeeAab(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
+    return frustum.testAab(minX, minY, minZ, maxX, maxY, maxZ);
   }
 }

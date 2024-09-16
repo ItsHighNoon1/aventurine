@@ -31,7 +31,6 @@ public class LineRenderer {
     lineShader.setMvpMatrix(mvpMatrix);
     GL30.glBindVertexArray(line.getVao());
     GL11.glDrawArrays(line.getMode(), 0, line.getVertexCount());
-    GL30.glBindVertexArray(0);
   }
 
   public void cleanup() {

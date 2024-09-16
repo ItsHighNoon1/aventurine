@@ -1,7 +1,8 @@
 package us.itshighnoon.aventurine.map.io;
 
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,21 +14,22 @@ import org.joml.Vector3f;
 
 import us.itshighnoon.aventurine.util.Logger;
 
-public class OsmPbfReader {
+public class LegacyOsmPbfReader {
   private static enum OsmBlobType {
     OSM_HEADER, OSM_DATA
   };
 
+  /*
   public static void readMap(Path filepath, Map<Long, Vector3f> outNodes, Map<Long, Long[]> outWays, double latMin, double latMax, double lonMin,
       double lonMax, double latScale, double lonScale, double latCenter, double lonCenter) {
     // https://wiki.openstreetmap.org/wiki/PBF_Format
     try {
-      RandomAccessFile file = new RandomAccessFile(filepath.toFile(), "r");
+      BufferedInputStream file = new BufferedInputStream(new FileInputStream(filepath.toFile()));
       ProtobufReader protoReader = new ProtobufReader(file);
 
-      while (file.getFilePointer() < file.length()) {
+      while (!protoReader.finished()) {
         // 4 bytes of length which tells us when we are out of the BlobHeader
-        int blobHeaderLength = file.readInt();
+        int blobHeaderLength = file.read();
         long expectedHeaderEnd = file.getFilePointer() + blobHeaderLength;
 
         // BlobHeader which tells us the type and size of the following Blob
@@ -275,4 +277,5 @@ public class OsmPbfReader {
       }
     }
   }
+  */
 }
