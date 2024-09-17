@@ -3,10 +3,8 @@ package us.itshighnoon.aventurine.map;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -14,12 +12,11 @@ import org.joml.Vector2f;
 
 import us.itshighnoon.aventurine.map.io.ProtobufReader;
 import us.itshighnoon.aventurine.render.Camera;
-import us.itshighnoon.aventurine.render.mem.Mesh;
 import us.itshighnoon.aventurine.util.Logger;
 
 public class MapChunk {
   private Path dataFile;
-  private List<Way> ways;
+  private Set<Way> ways;
   private float northEdge;
   private float southEdge;
   private float eastEdge;
@@ -33,7 +30,7 @@ public class MapChunk {
   public MapChunk(Path dataFile, long west, long south, long east, long north, long latCenter, long lonCenter,
       double latScale, double lonScale) {
     this.dataFile = dataFile;
-    this.ways = new ArrayList<Way>();
+    this.ways = new HashSet<Way>();
     this.northEdge = -(float) (0.000000001 * (north - latCenter) * latScale);
     this.southEdge = -(float) (0.000000001 * (south - latCenter) * latScale);
     this.eastEdge = (float) (0.000000001 * (east - lonCenter) * lonScale);
@@ -45,14 +42,14 @@ public class MapChunk {
     this.lonScale = lonScale;
   }
 
-  public Set<Mesh> getVisibleRoads(Camera camera) {
-    Set<Mesh> visibleRoads = new HashSet<Mesh>();
+  public Set<Way> getVisibleWays(Camera camera) {
+    Set<Way> builtSet = new HashSet<Way>();
     for (Way way : ways) {
-      if (way.getDebugMesh() != null) {
-        visibleRoads.add(way.getDebugMesh());
+      if (way.visible(camera)) {
+        builtSet.add(way);
       }
     }
-    return visibleRoads;
+    return builtSet;
   }
 
   public boolean isLoaded() {

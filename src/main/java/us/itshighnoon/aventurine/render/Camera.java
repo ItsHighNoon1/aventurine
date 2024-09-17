@@ -61,11 +61,11 @@ public class Camera {
     this.frustum = new FrustumIntersection(getCameraMatrix());
   }
   
-  public boolean canSeeAab(Vector3f min, Vector3f max) {
-    return frustum.testAab(min, max);
+  public int canSeeAab(Vector3f min, Vector3f max) {
+    return frustum.intersectAab(min, max);
   }
   
-  public boolean canSeeAab(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
-    return frustum.testAab(minX, minY, minZ, maxX, maxY, maxZ);
+  public int canSeeAab(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
+    return frustum.intersectAab(minX, minY, minZ, maxX, maxY, maxZ);
   }
 }

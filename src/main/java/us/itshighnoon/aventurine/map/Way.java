@@ -10,10 +10,13 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import org.joml.FrustumIntersection;
+import org.joml.Intersectionf;
 import org.joml.Vector3f;
 
 import us.itshighnoon.aventurine.map.io.ProtobufReader;
 import us.itshighnoon.aventurine.map.io.ProtobufWriter;
+import us.itshighnoon.aventurine.render.Camera;
 import us.itshighnoon.aventurine.render.mem.Mesh;
 import us.itshighnoon.aventurine.util.Logger;
 
@@ -26,6 +29,12 @@ public class Way {
   
   // Fields for rendering
   private Mesh debugMesh;
+  float minX;
+  float minY;
+  float minZ;
+  float maxX;
+  float maxY;
+  float maxZ;
   
   public Way(long id, Map<String, String> attributes, Node[] nodes, long[] nodeIds) {
     this.id = id;
@@ -33,6 +42,49 @@ public class Way {
     this.nodes = nodes;
     this.nodesRaw = nodeIds;
     this.debugMesh = null;
+    if (nodes != null) {
+      boolean setPos = false;
+      for (Node node : nodes) {
+        if (node != null) {
+          Vector3f nodePos = node.getPosition();
+          if (!setPos) {
+            this.minX = nodePos.x;
+            this.minY = nodePos.y;
+            this.minZ = nodePos.z;
+            this.maxX = nodePos.x;
+            this.maxY = nodePos.y;
+            this.maxZ = nodePos.z;
+            setPos = true;
+          } else {
+            if (nodePos.x < minX) {
+              this.minX = nodePos.x;
+            }
+            if (nodePos.y < minY) {
+              this.minY = nodePos.y;
+            }
+            if (nodePos.z < minZ) {
+              this.minZ = nodePos.z;
+            }
+            if (nodePos.x > maxX) {
+              this.maxX = nodePos.x;
+            }
+            if (nodePos.y > maxY) {
+              this.maxY = nodePos.y;
+            }
+            if (nodePos.z > maxZ) {
+              this.maxZ = nodePos.z;
+            }
+          }
+        }
+      }
+    } else {
+      this.minX = 0.0f;
+      this.minY = 0.0f;
+      this.minZ = 0.0f;
+      this.maxX = 0.0f;
+      this.maxY = 0.0f;
+      this.maxZ = 0.0f;
+    }
   }
   
   public Way(long id, Map<String, String> attributes, Node[] nodes) {
@@ -196,6 +248,15 @@ public class Way {
   
   public Mesh getDebugMesh() {
     return debugMesh;
+  }
+  
+  public boolean intersectsAab(float otherMinX, float otherMinY, float otherMinZ, float otherMaxX, float otherMaxY, float otherMaxZ) {
+    return Intersectionf.testAabAab(minX, minY, minZ, maxX, maxY, maxZ, otherMinX, otherMinY, otherMinZ, otherMaxX, otherMaxY, otherMaxZ);
+  }
+  
+  public boolean visible(Camera camera) {
+    int intersectionTest = camera.canSeeAab(minX, minY, minZ, maxX, maxY, maxZ);
+    return intersectionTest == FrustumIntersection.INSIDE || intersectionTest == FrustumIntersection.INTERSECT;
   }
   
   public void cleanup() {
