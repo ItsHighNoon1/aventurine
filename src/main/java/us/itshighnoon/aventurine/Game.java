@@ -83,13 +83,35 @@ public class Game {
         if (chunk.isLoaded()) {
           for (Way way : chunk.getVisibleWays(camera)) {
             if (way.getDebugMesh() != null) {
-              renderer.submitLine(way.getDebugMesh(), new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.0f, 0.0f, 0.0f));
+              Vector3f color = null;
+              String highwayType = way.getAttributes().get("highway");
+              if ("motorway".equals(highwayType)) {
+                // Interstate, US route, etc
+                color = new Vector3f(1.0f, 0.5f, 0.5f);
+              } else if (highwayType != null) {
+                // All other roads
+                color = new Vector3f(1.0f, 1.0f, 0.5f);
+              } else if (way.getAttributes().get("building") != null) {
+                // Building
+                color = new Vector3f(0.9f, 0.9f, 0.9f);
+              } else if (way.getAttributes().get("waterway") != null){
+                // Waterway
+                color = new Vector3f(0.2f, 0.5f, 1.0f);
+              } else if (way.getAttributes().get("railway") != null){
+                // Railroad
+                color = new Vector3f(1.0f, 0.5f, 1.0f);
+              } else if (way.getAttributes().get("power") != null){
+                // Long distance electrical line
+                color = new Vector3f(1.0f, 0.5f, 0.2f);
+              }
+              if (color != null) {
+                renderer.submitLine(way.getDebugMesh(), new Vector3f(0.0f, 0.0f, 0.0f), new Vector3f(0.0f, 0.0f, 0.0f), color);
+              }
             }
-            //renderer.submitTest(model, node, new Vector3f((float) Math.toRadians(-90), 0.0f, 0.0f));
           }
         }
       }
-      renderer.submitGui(gui);
+      //renderer.submitGui(gui);
       DisplayManager.refresh();
     }
     mapStreamer.cleanup();

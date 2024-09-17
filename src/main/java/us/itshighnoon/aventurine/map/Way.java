@@ -228,6 +228,10 @@ public class Way {
     return id;
   }
   
+  public Node[] getNodes() {
+    return nodes;
+  }
+  
   public Set<Long> getNodeSet() {
     Set<Long> nodeSet = new HashSet<Long>();
     if (nodes != null) {
@@ -244,6 +248,26 @@ public class Way {
   
   public Map<String, String> getAttributes() {
     return attributes;
+  }
+  
+  public String getDebugInfo() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Way ");
+    sb.append(id);
+    sb.append(" (");
+    if (nodes != null) {
+      sb.append(nodes.length);
+    } else {
+      sb.append(nodesRaw.length);
+    }
+    sb.append(" nodes)\nAttributes:");
+    for (Entry<String, String> attribute : attributes.entrySet()) {
+      sb.append("\n");
+      sb.append(attribute.getKey());
+      sb.append(" - ");
+      sb.append(attribute.getValue());
+    }
+    return sb.toString();
   }
   
   public Mesh getDebugMesh() {

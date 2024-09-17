@@ -114,6 +114,20 @@ public class Node {
     return attributes;
   }
   
+  public String getDebugInfo() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Node ");
+    sb.append(id);
+    sb.append("\nAttributes:");
+    for (Entry<String, String> attribute : attributes.entrySet()) {
+      sb.append("\n");
+      sb.append(attribute.getKey());
+      sb.append(" - ");
+      sb.append(attribute.getValue());
+    }
+    return sb.toString();
+  }
+  
   @Override
   public int hashCode() {
     return (int) id;

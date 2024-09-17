@@ -19,7 +19,7 @@ public class MasterRenderer {
     this.guiRenderer = new GuiRenderer();
     this.lineRenderer = new LineRenderer();
     this.camera = new Camera(0.1f, 100.0f, (float) Math.toRadians(90.0));
-    GL11.glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+    GL11.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     GL11.glEnable(GL11.GL_CULL_FACE);
     GL11.glCullFace(GL11.GL_BACK);
     GL11.glEnable(GL13.GL_MULTISAMPLE);

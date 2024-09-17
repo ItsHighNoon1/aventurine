@@ -249,7 +249,6 @@ public class Kafka {
       switch ((int) (identifier >> 3)) {
       case 1:
         stringTable = new ArrayList<String>();
-        stringTable.add(null); // 0 index is special
         long stringTableEnd = reader.readVarint() + reader.getCursor();
         while (reader.getCursor() < stringTableEnd) {
           long stringIdentifier = reader.readVarint();
