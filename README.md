@@ -10,13 +10,17 @@ The goal is to get through this list without the engine becoming an unmaintainab
 
 - [x] Async logging
 - [x] Parse (and render) FBX
-- [ ] Parse OpenStreetMap data
+- [X] Parse OpenStreetMap data
   - [x] Parse protocol buffers
-  - [ ] Assemble nodes into roads
-  - [ ] Store auxiliary information
-- [ ] Render OpenStreetMap roads
+  - [X] Assemble nodes into roads
+  - [X] Store auxiliary information
+- [X] Render OpenStreetMap roads
 - [X] Interactive GUIs
-- [ ] Parse .TIF elevation data
+- [ ] Parse raw elevation data
+  - [ ] Optimize elevation file size
+- [ ] Render 3D terrain
+- [ ] Render 3D road and building meshes
+- [ ] Render wilderness
 - [ ] Deferred renderer
 - [ ] Performance improvements
   - [ ] Performance improvements

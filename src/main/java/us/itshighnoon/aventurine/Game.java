@@ -6,6 +6,7 @@ import org.lwjgl.glfw.GLFW;
 import us.itshighnoon.aventurine.layer.GuiLayer;
 import us.itshighnoon.aventurine.layer.LayerManager;
 import us.itshighnoon.aventurine.map.MapChunk;
+import us.itshighnoon.aventurine.map.Node;
 import us.itshighnoon.aventurine.map.Way;
 import us.itshighnoon.aventurine.map.io.MapStreamer;
 import us.itshighnoon.aventurine.render.Camera;
@@ -23,7 +24,6 @@ public class Game {
     MasterRenderer renderer = new MasterRenderer();
     Model model = Model.loadAll("res/ignore/qq/qq.fbx");
     Font font = new Font("res/ignore/font/b/2048.fnt");
-    
 
     LayerManager eventHandler = new LayerManager();
     GuiNode gui = new GuiNode(300, 100, 100, 100, "Short\nAnd a very, very long line!", GuiNode.TextAlignment.CENTER, 1.0f, font);
@@ -78,6 +78,9 @@ public class Game {
       }
       camera.recalculateFrustum();
 
+      Vector3f closestRoadPos = null;
+      String closestRoadName = null;
+      float closestRoadDist = 0.0f;
       renderer.prepare();
       for (MapChunk chunk : mapStreamer.getMapChunks()) {
         if (chunk.isLoaded()) {
@@ -88,12 +91,54 @@ public class Game {
               if ("motorway".equals(highwayType)) {
                 // Interstate, US route, etc
                 color = new Vector3f(1.0f, 0.5f, 0.5f);
+                for (Node node : way.getNodes()) {
+                  if (node == null) {
+                    continue;
+                  }
+                  if (closestRoadPos == null) {
+                    closestRoadPos = node.getPosition();
+                    String roadName = way.getAttributes().get("ref");
+                    if (roadName == null) {
+                      roadName = way.getAttributes().get("name");
+                      if (roadName == null) {
+                        Logger.log("1001 Way has no readable name " + way.getId(), Logger.Severity.WARN);
+                      }
+                    } else {
+                      roadName = roadName.replace(';', '\n');
+                    }
+                    closestRoadName = roadName;
+                    closestRoadDist = closestRoadPos.distance(camera.position);
+                  } else {
+                    float nodeDist = node.getPosition().distance(camera.position);
+                    if (nodeDist < closestRoadDist) {
+                      closestRoadPos = node.getPosition();
+                      String roadName = way.getAttributes().get("ref");
+                      if (roadName == null) {
+                        roadName = way.getAttributes().get("name");
+                        if (roadName == null) {
+                          Logger.log("1001 Way has no readable name " + way.getId(), Logger.Severity.WARN);
+                        }
+                      } else {
+                        roadName = roadName.replace(';', '\n');
+                      }
+                      closestRoadName = roadName;
+                      closestRoadDist = nodeDist;
+                    }
+                  }
+                  if (node != null) {
+                    
+                  }
+                }
               } else if (highwayType != null) {
                 // All other roads
-                color = new Vector3f(1.0f, 1.0f, 0.5f);
+                if (DisplayManager.isKeyDown(GLFW.GLFW_KEY_SPACE)) {
+                  color = new Vector3f(1.0f, 1.0f, 0.5f);
+                }
               } else if (way.getAttributes().get("building") != null) {
                 // Building
-                color = new Vector3f(0.9f, 0.9f, 0.9f);
+                if (DisplayManager.isKeyDown(GLFW.GLFW_KEY_SPACE)) {
+                  color = new Vector3f(0.9f, 0.9f, 0.9f);
+                }
               } else if (way.getAttributes().get("waterway") != null){
                 // Waterway
                 color = new Vector3f(0.2f, 0.5f, 1.0f);
@@ -110,6 +155,9 @@ public class Game {
             }
           }
         }
+      }
+      if (closestRoadName != null) {
+        gui.setText(closestRoadName);
       }
       renderer.submitGui(gui);
       DisplayManager.refresh();

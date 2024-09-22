@@ -11,6 +11,7 @@ import us.itshighnoon.aventurine.render.mem.Mesh;
 import us.itshighnoon.aventurine.render.shader.GuiShader;
 import us.itshighnoon.aventurine.ui.GuiNode;
 import us.itshighnoon.aventurine.util.DisplayManager;
+import us.itshighnoon.aventurine.util.Logger;
 
 public class GuiRenderer {
   private GuiShader guiShader;
@@ -63,6 +64,12 @@ public class GuiRenderer {
         if (node.getAlignment() != GuiNode.TextAlignment.LEFT) {
           for (int charIdx = 0; charIdx < lines[lineIdx].length(); charIdx++) {
             Glyph glyph = font.getGlyph(lines[lineIdx].charAt(charIdx));
+            if (glyph == null) {
+              Logger.log(
+                  "0068 Bad character '" + lines[lineIdx].charAt(charIdx) + "' as part of \"" + node.getText() + "\"",
+                  Logger.Severity.WARN);
+              continue;
+            }
             alignAdjust += glyph.getxAdvance() * node.getTextSize() * aspectRatio;
           }
         }
@@ -81,6 +88,9 @@ public class GuiRenderer {
         float runningY = yPos - font.getLineHeight() * node.getTextSize() * lineIdx;
         for (int charIdx = 0; charIdx < lines[lineIdx].length(); charIdx++) {
           Glyph glyph = font.getGlyph(lines[lineIdx].charAt(charIdx));
+          if (glyph == null) {
+            continue;
+          }
           mMatrix.identity();
           mMatrix.setTranslation(runningX + glyph.getxOffset() * node.getTextSize() * aspectRatio,
               runningY - glyph.getyOffset() * node.getTextSize(), 0.0f);
