@@ -3,8 +3,10 @@ package us.itshighnoon.aventurine.map;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -16,7 +18,7 @@ import us.itshighnoon.aventurine.util.Logger;
 
 public class MapChunk {
   private Path dataFile;
-  private Set<Way> ways;
+  private List<Way> ways;
   private float northEdge;
   private float southEdge;
   private float eastEdge;
@@ -30,7 +32,7 @@ public class MapChunk {
   public MapChunk(Path dataFile, long west, long south, long east, long north, long latCenter, long lonCenter,
       double latScale, double lonScale) {
     this.dataFile = dataFile;
-    this.ways = new HashSet<Way>();
+    this.ways = new ArrayList<Way>();
     this.northEdge = -(float) (0.000000001 * (north - latCenter) * latScale);
     this.southEdge = -(float) (0.000000001 * (south - latCenter) * latScale);
     this.eastEdge = (float) (0.000000001 * (east - lonCenter) * lonScale);

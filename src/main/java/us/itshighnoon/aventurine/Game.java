@@ -10,23 +10,23 @@ import us.itshighnoon.aventurine.map.Way;
 import us.itshighnoon.aventurine.map.io.MapStreamer;
 import us.itshighnoon.aventurine.render.Camera;
 import us.itshighnoon.aventurine.render.MasterRenderer;
+import us.itshighnoon.aventurine.render.mem.Font;
 import us.itshighnoon.aventurine.render.mem.Mesh;
 import us.itshighnoon.aventurine.render.mem.Model;
 import us.itshighnoon.aventurine.ui.GuiListener;
 import us.itshighnoon.aventurine.ui.GuiNode;
 import us.itshighnoon.aventurine.util.DisplayManager;
 import us.itshighnoon.aventurine.util.Logger;
-import us.itshighnoon.aventurine.util.ResourceManager;
 
 public class Game {
   public void run() {
     MasterRenderer renderer = new MasterRenderer();
     Model model = Model.loadAll("res/ignore/qq/qq.fbx");
+    Font font = new Font("res/ignore/font/b/2048.fnt");
+    
 
     LayerManager eventHandler = new LayerManager();
-    GuiNode gui = new GuiNode(100, 100, 100, 100, ResourceManager.loadTexture("res/ignore/qq/1.png"));
-    GuiNode gui2 = new GuiNode(150, 150, 100, 100, ResourceManager.loadTexture("res/ignore/qq/a4.bmp"));
-    gui.addChild(gui2);
+    GuiNode gui = new GuiNode(300, 100, 100, 100, "Short\nAnd a very, very long line!", GuiNode.TextAlignment.CENTER, 1.0f, font);
     gui.setListener(new TestListener());
     GuiLayer guiEventHandler = new GuiLayer(gui);
     eventHandler.addFirst(guiEventHandler);
@@ -111,9 +111,10 @@ public class Game {
           }
         }
       }
-      //renderer.submitGui(gui);
+      renderer.submitGui(gui);
       DisplayManager.refresh();
     }
+    font.cleanup();
     mapStreamer.cleanup();
     model.cleanup();
     renderer.cleanup();
