@@ -17,7 +17,9 @@ import us.itshighnoon.aventurine.render.Camera;
 import us.itshighnoon.aventurine.util.Logger;
 
 public class MapChunk {
-  private Path dataFile;
+  private Path kafkaFile;
+  private Path tifFile;
+  private Terrain terrain;
   private List<Way> ways;
   private float northEdge;
   private float southEdge;
@@ -29,10 +31,12 @@ public class MapChunk {
   private double latScale;
   private double lonScale;
 
-  public MapChunk(Path dataFile, long west, long south, long east, long north, long latCenter, long lonCenter,
-      double latScale, double lonScale) {
-    this.dataFile = dataFile;
+  public MapChunk(Path wayFile, Path terrainFile, long west, long south, long east, long north, long latCenter,
+      long lonCenter, double latScale, double lonScale) {
+    this.kafkaFile = wayFile;
+    this.tifFile = terrainFile;
     this.ways = new ArrayList<Way>();
+    this.terrain = null;
     this.northEdge = -(float) (0.000000001 * (north - latCenter) * latScale);
     this.southEdge = -(float) (0.000000001 * (south - latCenter) * latScale);
     this.eastEdge = (float) (0.000000001 * (east - lonCenter) * lonScale);
@@ -54,6 +58,10 @@ public class MapChunk {
     return builtSet;
   }
 
+  public Terrain getTerrain() {
+    return terrain;
+  }
+
   public boolean isLoaded() {
     return loaded;
   }
@@ -64,7 +72,7 @@ public class MapChunk {
     Map<Long, Node> nodes = new HashMap<Long, Node>();
 
     try {
-      ProtobufReader reader = new ProtobufReader(new File(dataFile.toString()));
+      ProtobufReader reader = new ProtobufReader(new File(kafkaFile.toString()));
       int numNodes = (int) reader.readVarint();
       Node lastNode = null;
       for (int nodeIdx = 0; nodeIdx < numNodes; nodeIdx++) {
@@ -78,12 +86,13 @@ public class MapChunk {
         ways.add(way);
       }
     } catch (IOException e) {
-      Logger.log("0060 Failed to load chunk file " + dataFile.toString());
+      Logger.log("0060 Failed to load chunk file " + kafkaFile.toString());
     }
 
     for (Way way : ways) {
       way.buildMeshAsync();
     }
+    terrain = new Terrain(tifFile);
     Logger.log(String.format("0054 Finished loading chunk at %.4f, %.4f", eastEdge, northEdge));
     loaded = true;
   }
@@ -98,6 +107,8 @@ public class MapChunk {
       way.cleanup();
     }
     ways.clear();
+    terrain.cleanup();
+    terrain = null;
   }
 
   public float distance2(float x, float z) {

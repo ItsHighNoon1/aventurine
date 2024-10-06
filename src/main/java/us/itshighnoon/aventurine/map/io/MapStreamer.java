@@ -106,6 +106,7 @@ public class MapStreamer {
     loadDistance += Math.sqrt(chunkSize * unitsPerLat  * 0.000000001 * chunkSize * unitsPerLon * 0.000000001 / 2.0f);
 
     File mapDirectory = new File(filePath.getParent().resolve(Path.of(fileData.get("mapdir"))).toString());
+    Path terrainPath = filePath.getParent().resolve(Path.of(fileData.get("terrain")));
     for (File child : mapDirectory.listFiles()) {
       if (!child.getName().endsWith(".kfk")) {
         continue;
@@ -114,7 +115,7 @@ public class MapStreamer {
       long lat = Long.parseLong(splitPath[1]);
       long lon = Long.parseLong(splitPath[0]);
       Path nodesPath = Path.of(child.getPath());
-      MapChunk newChunk = new MapChunk(nodesPath, (lon - 1) * chunkSize, lat * chunkSize, lon * chunkSize,
+      MapChunk newChunk = new MapChunk(nodesPath, terrainPath, (lon - 1) * chunkSize, lat * chunkSize, lon * chunkSize,
           (lat + 1) * chunkSize, latCenter, lonCenter, unitsPerLat, unitsPerLon);
       chunks.add(newChunk);
     }

@@ -1,6 +1,7 @@
 # comment
 
 mapdir=ignore/kafka2/
+terrain=ignore/ground.png
 centerLat=35700000000
 centerLon=-78600000000
 latMul=364000

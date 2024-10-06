@@ -24,11 +24,11 @@ public class LayerManager {
   }
   
   public void addFirst(Layer layer) {
-    layers.addFirst(layer);
+    layers.add(0, layer);
   }
   
   public void addLast(Layer layer) {
-    layers.addLast(layer);
+    layers.add(layers.size(), layer);
   }
   
   public void addAfter(Layer layer, String layerName) {
@@ -41,6 +41,6 @@ public class LayerManager {
       }
     }
     Logger.log("0042 Tried adding layer after " + layerName + " but no such layer existed", Logger.Severity.WARN);
-    layers.addFirst(layer);
+    layers.add(0, layer);
   }
 }

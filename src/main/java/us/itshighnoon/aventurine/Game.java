@@ -1,5 +1,7 @@
 package us.itshighnoon.aventurine;
 
+import java.nio.file.Path;
+
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
@@ -7,6 +9,7 @@ import us.itshighnoon.aventurine.layer.GuiLayer;
 import us.itshighnoon.aventurine.layer.LayerManager;
 import us.itshighnoon.aventurine.map.MapChunk;
 import us.itshighnoon.aventurine.map.Node;
+import us.itshighnoon.aventurine.map.Terrain;
 import us.itshighnoon.aventurine.map.Way;
 import us.itshighnoon.aventurine.map.io.MapStreamer;
 import us.itshighnoon.aventurine.render.Camera;
@@ -18,6 +21,7 @@ import us.itshighnoon.aventurine.ui.GuiListener;
 import us.itshighnoon.aventurine.ui.GuiNode;
 import us.itshighnoon.aventurine.util.DisplayManager;
 import us.itshighnoon.aventurine.util.Logger;
+import us.itshighnoon.aventurine.util.ResourceManager;
 
 public class Game {
   public void run() {
@@ -34,17 +38,23 @@ public class Game {
 
     Camera camera = new Camera(100.0f, 25000.0f, (float) Math.toRadians((double) 90.0f));
     renderer.setCamera(camera);
-    camera.position.y = 1000.0f;
+    camera.position.y = 2500.0f;
+    camera.rotation.x = (float) -Math.toRadians(90.0);
     DisplayManager.setCamera(camera);
     MapStreamer mapStreamer = new MapStreamer("res/map.meta");
+    Terrain terrain = new Terrain(Path.of("res/ignore/ground.png"));
 
     while (!DisplayManager.closeRequested()) {
       mapStreamer.loadChunksAround(camera.position.x, camera.position.z, true);
       Mesh.serviceOutstandingLoads();
+      ResourceManager.serviceOutstandingLoads();
 
       float speed = DisplayManager.getLastFrameTime() * 5000.0f;
       if (DisplayManager.isKeyDown(GLFW.GLFW_KEY_LEFT_SHIFT)) {
         speed *= 3.0f;
+      }
+      if (DisplayManager.isKeyDown(GLFW.GLFW_KEY_LEFT_CONTROL)) {
+        speed *= 0.05f;
       }
       if (DisplayManager.isKeyDown(GLFW.GLFW_KEY_W)) {
         camera.position.z -= speed * Math.cos(camera.rotation.y) * Math.cos(camera.rotation.x);
@@ -82,6 +92,7 @@ public class Game {
       String closestRoadName = null;
       float closestRoadDist = 0.0f;
       renderer.prepare();
+      renderer.submitTerrain(terrain);
       for (MapChunk chunk : mapStreamer.getMapChunks()) {
         if (chunk.isLoaded()) {
           for (Way way : chunk.getVisibleWays(camera)) {

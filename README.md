@@ -16,11 +16,14 @@ The goal is to get through this list without the engine becoming an unmaintainab
   - [X] Store auxiliary information
 - [X] Render OpenStreetMap roads
 - [X] Interactive GUIs
-- [ ] Parse raw elevation data
+- [X] Parse raw elevation data
   - [ ] Optimize elevation file size
 - [ ] Render 3D terrain
+  - [ ] LODs
 - [ ] Render 3D road and building meshes
 - [ ] Render wilderness
+- [ ] Final file format
+- [ ] Procedural sign placement
 - [ ] Deferred renderer
 - [ ] Performance improvements
   - [ ] Performance improvements

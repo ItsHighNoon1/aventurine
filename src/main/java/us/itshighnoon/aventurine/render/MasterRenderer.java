@@ -4,6 +4,7 @@ import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 
+import us.itshighnoon.aventurine.map.Terrain;
 import us.itshighnoon.aventurine.render.mem.Mesh;
 import us.itshighnoon.aventurine.render.mem.Model;
 import us.itshighnoon.aventurine.ui.GuiNode;
@@ -12,12 +13,14 @@ public class MasterRenderer {
   private TestRenderer testRenderer;
   private GuiRenderer guiRenderer;
   private LineRenderer lineRenderer;
+  private TerrainRenderer terrainRenderer;
   private Camera camera;
   
   public MasterRenderer() {
     this.testRenderer = new TestRenderer();
     this.guiRenderer = new GuiRenderer();
     this.lineRenderer = new LineRenderer();
+    this.terrainRenderer = new TerrainRenderer();
     this.camera = new Camera(0.1f, 100.0f, (float) Math.toRadians(90.0));
     GL11.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     GL11.glEnable(GL11.GL_CULL_FACE);
@@ -50,6 +53,12 @@ public class MasterRenderer {
   public void submitLine(Mesh line, Vector3f position, Vector3f rotation, Vector3f color) {
     lineRenderer.prepare();
     lineRenderer.render(camera, position, rotation, line, color);
+  }
+  
+  public void submitTerrain(Terrain terrain) {
+    terrainRenderer.prepare();
+    terrainRenderer.render(camera, terrain);
+    GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
   }
   
   public void cleanup() {

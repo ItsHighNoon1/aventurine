@@ -1,4 +1,4 @@
-package us.itshighnoon.aventurine.map.io;
+package us.itshighnoon.aventurine.map.io.preprocessors;
 
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
@@ -19,6 +19,8 @@ import org.joml.Vector2L;
 
 import us.itshighnoon.aventurine.map.Node;
 import us.itshighnoon.aventurine.map.Way;
+import us.itshighnoon.aventurine.map.io.ProtobufReader;
+import us.itshighnoon.aventurine.map.io.ProtobufWriter;
 
 /**
  * Kafka.java - convert osm.pbf files to .kfk files

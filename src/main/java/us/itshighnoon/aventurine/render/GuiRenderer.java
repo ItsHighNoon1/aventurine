@@ -7,21 +7,20 @@ import org.lwjgl.opengl.GL30;
 
 import us.itshighnoon.aventurine.render.mem.Font;
 import us.itshighnoon.aventurine.render.mem.Font.Glyph;
-import us.itshighnoon.aventurine.render.mem.Mesh;
 import us.itshighnoon.aventurine.render.shader.GuiShader;
 import us.itshighnoon.aventurine.ui.GuiNode;
 import us.itshighnoon.aventurine.util.DisplayManager;
 import us.itshighnoon.aventurine.util.Logger;
+import us.itshighnoon.aventurine.util.ResourceManager;
 
 public class GuiRenderer {
   private GuiShader guiShader;
-  private Mesh quad;
+  
   private int screenWidth;
   private int screenHeight;
 
   public GuiRenderer() {
     this.guiShader = new GuiShader();
-    this.quad = Mesh.loadQuad();
   }
 
   public void prepare() {
@@ -35,7 +34,7 @@ public class GuiRenderer {
   public void render(GuiNode node) {
     guiShader.bind();
     GL13.glActiveTexture(GL13.GL_TEXTURE0);
-    GL30.glBindVertexArray(quad.getVao());
+    GL30.glBindVertexArray(ResourceManager.getQuad().getVao());
     renderRecursive(node);
   }
 
@@ -53,7 +52,7 @@ public class GuiRenderer {
       guiShader.setMMatrix(mMatrix);
       GL13.glBindTexture(GL11.GL_TEXTURE_2D, node.getTexture());
       guiShader.setTextureParms(0, node.getTexOffset(), node.getTexSize());
-      GL11.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, quad.getVertexCount());
+      GL11.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, ResourceManager.getQuad().getVertexCount());
     }
     if (node.getText() != null) {
       Font font = node.getFont();
@@ -98,7 +97,7 @@ public class GuiRenderer {
               glyph.getTexSize().y * node.getTextSize(), 0.0f);
           guiShader.setMMatrix(mMatrix);
           guiShader.setTextureParms(0, glyph.getTexLocation(), glyph.getTexSize());
-          GL11.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, quad.getVertexCount());
+          GL11.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, ResourceManager.getQuad().getVertexCount());
           runningX += glyph.getxAdvance() * node.getTextSize() * aspectRatio;
         }
       }
@@ -110,6 +109,5 @@ public class GuiRenderer {
 
   public void cleanup() {
     guiShader.cleanup();
-    quad.cleanup();
   }
 }
